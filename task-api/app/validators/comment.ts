@@ -2,7 +2,7 @@ import vine from '@vinejs/vine'
 
 export const createCommentValidator = vine.compile(
   vine.object({
-    comment: vine.string().trim().minLength(1),
+    comment: vine.string().trim().minLength(1).maxLength(1000),
   })
 )
 
