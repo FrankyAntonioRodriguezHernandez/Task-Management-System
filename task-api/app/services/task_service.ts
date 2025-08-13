@@ -6,7 +6,6 @@ import User from '#models/user'
 type ListOptions = { status?: TaskStatus; trashed?: boolean }
 
 function serializeTask(t: Task) {
-  // Devuelve datos listos para el front (con contadores)
   return {
     id: t.id,
     title: t.title,
@@ -23,42 +22,38 @@ function serializeTask(t: Task) {
 
 export default class TaskService {
   async list(opts: ListOptions = {}) {
-    const base = Task.query()
+    const rows = await Task.query()
       .if(!opts.trashed, (q) => q.withScopes((s) => s.notTrashed()))
       .if(Boolean(opts.trashed), (q) => q.withScopes((s) => s.onlyTrashed()))
       .if(Boolean(opts.status), (q) => q.where('status', opts.status!))
       .preload('categories', (q) => q.select(['id', 'name', 'color']))
       .preload('assignees', (q) => q.select(['id', 'full_name', 'avatar_url']))
-      .preload('comments', (q) => q.select(['id']).orderBy('id', 'asc'))
-      .preload('attachments', (q) => q.select(['id']).orderBy('id', 'asc'))
+      .preload('comments', (q) => q.select(['id']))
+      .preload('attachments', (q) => q.select(['id']))
       .orderBy('id', 'asc')
-
-    const rows = await base
     return rows.map(serializeTask)
   }
 
   async counts() {
     const statuses: TaskStatus[] = ['in_progress', 'reviews', 'completed', 'done']
     const out: Record<TaskStatus, number> = { in_progress: 0, reviews: 0, completed: 0, done: 0 }
-    await Promise.all(
-      statuses.map(async (s) => {
-        out[s] = await Task.query().withScopes((sc) => sc.notTrashed()).where('status', s).count('* as total')
-          .then((r) => Number(r[0].$extras.total))
-      })
-    )
+    for (const s of statuses) {
+      const r = await Task.query().withScopes((sc) => sc.notTrashed()).where('status', s).count('* as total')
+      out[s] = Number(r[0].$extras.total)
+    }
     return out
   }
 
   async getOne(id: number, opts: { trashed?: boolean } = {}) {
-    const q = Task.query()
+    const t = await Task.query()
       .if(!opts.trashed, (qb) => qb.withScopes((s) => s.notTrashed()))
       .if(Boolean(opts.trashed), (qb) => qb.withScopes((s) => s.onlyTrashed()))
       .where('id', id)
       .preload('categories')
       .preload('assignees')
-      .preload('comments', (q2) => q2.orderBy('id', 'asc'))
-      .preload('attachments', (q2) => q2.orderBy('id', 'asc'))
-    const t = await q.firstOrFail()
+      .preload('comments')
+      .preload('attachments')
+      .firstOrFail()
     return serializeTask(t)
   }
 
@@ -67,15 +62,17 @@ export default class TaskService {
     currentUserId: number
   ) {
     const task = await Task.create({ title: data.title, status: data.status, created_by: currentUserId })
+
     if (data.categoryIds?.length) {
-      // Verifico que existan
-      const cats = await TaskCategory.query().whereIn('id', data.categoryIds)
-      await task.related('categories').sync(cats.map((c) => c.id))
+      const ids = (await TaskCategory.query().whereIn('id', data.categoryIds)).map((c) => c.id)
+      await task.related('categories').sync(ids)
     }
+
     if (data.assigneeIds?.length) {
-      const users = await User.query().whereIn('id', data.assigneeIds)
-      await task.related('assignees').sync(users.map((u) => u.id))
+      const ids = (await User.query().whereIn('id', data.assigneeIds)).map((u) => u.id)
+      await task.related('assignees').sync(ids)
     }
+
     return this.getOne(task.id)
   }
 
