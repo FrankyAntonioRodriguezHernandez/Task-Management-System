@@ -17,4 +17,30 @@ export default class CommentService {
     await c.refresh()
     return c
   }
+
+  async update(taskId: number, commentId: number, newComment: string) {
+    await Task.query().withScopes((s) => s.notTrashed()).where('id', taskId).firstOrFail()
+
+    const row = await TaskComment.query()
+      .where('id', commentId)
+      .andWhere('task_id', taskId)
+      .firstOrFail()
+
+    row.comment = newComment
+    await row.save()
+    await row.refresh()
+    return row
+  }
+
+  async destroy(taskId: number, commentId: number) {
+    await Task.query().withScopes((s) => s.notTrashed()).where('id', taskId).firstOrFail()
+
+    const row = await TaskComment.query()
+      .where('id', commentId)
+      .andWhere('task_id', taskId)
+      .firstOrFail()
+
+    await row.delete()
+    return { success: true }
+  }
 }
