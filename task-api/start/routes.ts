@@ -27,6 +27,9 @@ router.post('/tasks/:id/restore', [TasksController, 'restore'])
 // Comentarios por tarea// Comentarios por tarea
 router.get('/tasks/:taskId/comments', [TaskCommentsController, 'index'])
 router.post('/tasks/:taskId/comments', [TaskCommentsController, 'store'])
+router.put('/tasks/:taskId/comments/:id', [TaskCommentsController, 'update'])   
+router.patch('/tasks/:taskId/comments/:id', [TaskCommentsController, 'update']) 
+router.delete('/tasks/:taskId/comments/:id', [TaskCommentsController, 'destroy']) 
 
 
 // Adjuntos por tarea
