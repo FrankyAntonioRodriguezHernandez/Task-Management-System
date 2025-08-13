@@ -1,10 +1,11 @@
 import app from '@adonisjs/core/services/app'
 import { randomUUID } from 'node:crypto'
 import fs from 'node:fs'
-import path from 'node:path'
+import path, { isAbsolute, join } from 'node:path'
 import Task from '#models/task'
 import TaskAttachment from '#models/task_attachment'
 import type { MultipartFile } from '@adonisjs/core/bodyparser'
+import { unlink } from 'node:fs/promises'
 
 const UPLOAD_DIR = app.makePath('uploads')
 
@@ -34,4 +35,30 @@ export default class AttachmentService {
     const fullPath = path.join(UPLOAD_DIR, path.basename(att.file_path)) // evita path traversal
     return { fullPath, downloadName: att.file_name }
   }
+
+  public async destroy(id: number) {
+    const row = await TaskAttachment.findOrFail(id)
+
+    const storedPath = row.file_path
+    if (storedPath) {
+      const candidates = [
+        storedPath,
+        path.isAbsolute(storedPath) ? undefined : path.join(process.cwd(), storedPath),
+        path.isAbsolute(storedPath) ? undefined : app.tmpPath(storedPath),
+      ].filter(Boolean) as string[]
+
+      for (const p of candidates) {
+        try {
+          await unlink(p)   
+          break
+        } catch {
+          // ignoramos y probamos el siguiente candidato
+        }
+      }
+    }
+
+    await row.delete()
+    return { success: true }
+  }
+
 }

@@ -22,13 +22,22 @@ export default class TaskAttachmentsController {
   }
 
   public async download({ params, response }: HttpContext) {
-  const { fullPath, downloadName } = await service.downloadPath(Number(params.id))
+    const { fullPath, downloadName } = await service.downloadPath(Number(params.id))
 
-  if (!fs.existsSync(fullPath)) {
-    return response.notFound({ message: 'File not found' })
+    if (!fs.existsSync(fullPath)) {
+      return response.notFound({ message: 'File not found' })
+    }
+    response.attachment(downloadName)
+    return response.download(fullPath)
   }
-  response.attachment(downloadName)
-  return response.download(fullPath)
-}
 
+  public async destroy({ params, response }: HttpContext) {
+    const id = Number(params.id)
+    if (!Number.isInteger(id)) {
+      return response.badRequest({ message: 'Invalid attachment id' })
+    }
+
+    await service.destroy(id)
+    return response.ok({ success: true })
+  }
 }

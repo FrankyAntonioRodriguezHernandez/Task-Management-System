@@ -23,12 +23,13 @@ router.post('/tasks/:id/restore', [TasksController, 'restore'])
 
 router.get('/tasks/:taskId/comments', [TaskCommentsController, 'index'])
 router.post('/tasks/:taskId/comments', [TaskCommentsController, 'store'])
-router.put('/tasks/:taskId/comments/:id', [TaskCommentsController, 'update'])   
-router.patch('/tasks/:taskId/comments/:id', [TaskCommentsController, 'update']) 
-router.delete('/tasks/:taskId/comments/:id', [TaskCommentsController, 'destroy']) 
+router.put('/tasks/:taskId/comments/:commentId', [TaskCommentsController, 'update'])
+router.patch('/tasks/:taskId/comments/:commentId', [TaskCommentsController, 'update'])
+router.delete('/tasks/:taskId/comments/:commentId', [TaskCommentsController, 'destroy'])
 
 
 router.get('/tasks/:id/attachments', [TaskAttachmentsController, 'index'])
 router.post('/tasks/:id/attachments', [TaskAttachmentsController, 'store'])
-
 router.get('/attachments/:id/download', [TaskAttachmentsController, 'download'])
+router.delete('/attachments/:id', [TaskAttachmentsController, 'destroy'])
+

@@ -1,8 +1,13 @@
 import Task from '#models/task'
 import TaskComment from '#models/task_comment'
 
+function assertInt(n: number, name: string) {
+  if (!Number.isInteger(n)) throw new Error(`${name} must be an integer`)
+}
+
 export default class CommentService {
   async listByTask(taskId: number) {
+    assertInt(taskId, 'taskId')
     const task = await Task.query().withScopes((s) => s.notTrashed()).where('id', taskId).firstOrFail()
     return task
       .related('comments')
