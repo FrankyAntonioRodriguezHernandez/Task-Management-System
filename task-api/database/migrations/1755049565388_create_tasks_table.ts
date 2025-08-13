@@ -9,7 +9,7 @@ export default class extends BaseSchema {
       table.string('title').notNullable()
       table.enu('status', ['in_progress','reviews','completed','done'], { useNative: true, enumName: 'task_status' }).notNullable()
       table.integer('created_by').unsigned().references('users.id').onDelete('SET NULL')
-      table.timestamp('deleted_at', { useTz: true }).nullable() // Soft delete
+      table.timestamp('deleted_at', { useTz: true }).nullable() 
       table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
       table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())
     })

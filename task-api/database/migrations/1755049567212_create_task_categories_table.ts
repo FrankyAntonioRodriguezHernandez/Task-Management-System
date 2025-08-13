@@ -2,17 +2,18 @@ import { BaseSchema } from '@adonisjs/lucid/schema'
 
 export default class extends BaseSchema {
   protected tableName = 'task_categories'
-
-  async up() {
+  
+  async up () {
     this.schema.createTable(this.tableName, (table) => {
       table.increments('id')
-
-      table.timestamp('created_at')
-      table.timestamp('updated_at')
+      table.string('name').notNullable()
+      table.string('color').notNullable()
+      table.timestamp('created_at', { useTz: true }).defaultTo(this.now())
+      table.timestamp('updated_at', { useTz: true }).defaultTo(this.now())
     })
   }
 
-  async down() {
-    this.schema.dropTable(this.tableName)
+  async down () { 
+    this.schema.dropTable(this.tableName) 
   }
 }
