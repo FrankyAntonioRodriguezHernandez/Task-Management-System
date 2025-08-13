@@ -17,7 +17,6 @@ export default class Task extends BaseModel {
   @column.dateTime({ autoCreate: true }) declare created_at: DateTime
   @column.dateTime({ autoCreate: true, autoUpdate: true }) declare updated_at: DateTime
 
-  // Scopes de soft delete
   static notTrashed = scope((q) => q.whereNull('deleted_at'))
   static onlyTrashed = scope((q) => q.whereNotNull('deleted_at'))
 
