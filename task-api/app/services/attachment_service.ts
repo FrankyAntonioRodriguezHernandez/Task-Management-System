@@ -23,7 +23,7 @@ export default class AttachmentService {
     return TaskAttachment.create({
       task_id: taskId,
       file_name: file.clientName || filename,
-      file_path: filename, // guardamos solo el nombre
+      file_path: filename, 
       file_size: file.size,
       uploaded_by: uploaderId,
     })
