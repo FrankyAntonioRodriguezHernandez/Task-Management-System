@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Task, TaskStatus } from '@/types'
+import type { Task, TaskStatus } from '../types'
 defineProps<{
   title: string
   colorDot: string
