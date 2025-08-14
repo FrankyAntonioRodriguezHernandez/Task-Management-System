@@ -1,22 +1,35 @@
+import { ref } from 'vue'
 import type { User, TaskCategory } from '../types'
+import { useApi } from '../services/api'
+
+const _users = ref<User[] | null>(null)
+const _categories = ref<TaskCategory[] | null>(null)
+const _loading = ref(false)
+const _loaded = ref(false)
 
 export function useMetadata() {
-  const users = useState<User[]>('meta:users', () => [])
-  const categories = useState<TaskCategory[]>('meta:categories', () => [])
-  const config = useRuntimeConfig()
+  const api = useApi()
 
-  const load = async () => {
-    const [u, c] = await Promise.all([
-      $fetch<User[]>(`${config.public.apiBase}/users`),
-      $fetch<TaskCategory[]>(`${config.public.apiBase}/categories`),
-    ])
-    users.value = u
-    categories.value = c
+  async function loadOnce() {
+    if (_loaded.value) return
+    _loading.value = true
+    try {
+      const [u, c] = await Promise.all([
+        api.get<User[]>('/users'),
+        api.get<TaskCategory[]>('/categories'),
+      ])
+      _users.value = u.data
+      _categories.value = c.data
+      _loaded.value = true
+    } finally {
+      _loading.value = false
+    }
   }
 
-  if (!users.value.length || !categories.value.length) {
-    load()
+  return {
+    users: _users,
+    categories: _categories,
+    loading: _loading,
+    loadOnce,
   }
-
-  return { users, categories, refresh: load }
 }
