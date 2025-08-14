@@ -1,14 +1,20 @@
 {
-  // https://nuxt.com/docs/guide/concepts/typescript
   "compilerOptions": {
+    "target": "ES2020",
+    "moduleResolution": "Bundler",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "types": ["nuxt", "vite/client", "@types/web-bluetooth"],
+    "skipLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
-      "#app": ["./.nuxt/types/app"],
-      "#imports": ["./.nuxt/types/imports"]
-    },
-    "types": ["node"]
+      "@/*": ["./*"]
+    }
   },
-  "include": ["**/*.ts", "**/*.vue"],
-  "exclude": ["node_modules", ".nuxt", "dist"],
+  "files": [],
+  "references": [
+    { "path": "./.nuxt/tsconfig.app.json" },
+    { "path": "./.nuxt/tsconfig.server.json" },
+    { "path": "./.nuxt/tsconfig.shared.json" },
+    { "path": "./.nuxt/tsconfig.node.json" }
+  ]
 }
