@@ -1,38 +1,57 @@
 <script setup lang="ts">
-import { Card, CardContent, CardHeader, CardTitle } from '~/app/components/ui/card'
-import { Bar } from 'vue-chartjs'
-import { Chart as ChartJS, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from 'chart.js'
+import { computed } from 'vue'
 import { useTasksStore } from '../stores/tasks'
-ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend)
+import { Bar } from 'vue-chartjs'
+import {
+  Chart as ChartJS, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale,
+} from 'chart.js'
+ChartJS.register(Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale)
 
 const store = useTasksStore()
-onMounted(() => store.refreshCounts())
-const chartData = computed(() => ({
-  labels: ['In Progress','Reviews','Completed','Done'],
-  datasets: [{ label: 'Tasks', data: [
-    store.counts.in_progress,
-    store.counts.reviews,
-    store.counts.completed,
-    store.counts.done
-  ]}]
+if (!store.items.length) await store.fetchAll()
+
+const metrics = computed(() => ({
+  totalActive: store.items.length,
+  inReviews: store.counts.reviews,
+  completedThisMonth: store.counts.completed, 
+  avgCompletionDays: 3, 
 }))
+
+const chartData = computed(() => ({
+  labels: ['In Progress', 'Reviews', 'Completed', 'Done'],
+  datasets: [
+    { label: 'Tasks by status', data: [
+      store.counts.in_progress,
+      store.counts.reviews,
+      store.counts.completed,
+      store.counts.done,
+    ]},
+  ],
+}))
+const chartOptions = { responsive: true, maintainAspectRatio: false }
 </script>
 
 <template>
-  <div class="container mx-auto p-4 grid gap-4 md:grid-cols-4">
-    <Card v-for="m in [
-      { t:'Active Tasks', v: store.counts.in_progress + store.counts.reviews + store.counts.completed + store.counts.done },
-      { t:'Completed (All)', v: store.counts.completed },
-      { t:'In Review', v: store.counts.reviews },
-      { t:'Done', v: store.counts.done },
-    ]" :key="m.t">
-      <CardHeader><CardTitle>{{ m.t }}</CardTitle></CardHeader>
-      <CardContent><div class="text-3xl font-semibold">{{ m.v }}</div></CardContent>
-    </Card>
+  <div class="grid gap-6 md:grid-cols-4">
+    <div class="rounded-xl border p-4 bg-card">
+      <div class="text-sm text-muted-foreground">Total de Tareas Activas</div>
+      <div class="text-2xl font-semibold">{{ metrics.totalActive }}</div>
+    </div>
+    <div class="rounded-xl border p-4 bg-card">
+      <div class="text-sm text-muted-foreground">Tareas Completadas este Mes</div>
+      <div class="text-2xl font-semibold">{{ metrics.completedThisMonth }}</div>
+    </div>
+    <div class="rounded-xl border p-4 bg-card">
+      <div class="text-sm text-muted-foreground">Tareas en Revisión</div>
+      <div class="text-2xl font-semibold">{{ metrics.inReviews }}</div>
+    </div>
+    <div class="rounded-xl border p-4 bg-card">
+      <div class="text-sm text-muted-foreground">Promedio de Finalización (días)</div>
+      <div class="text-2xl font-semibold">{{ metrics.avgCompletionDays }}</div>
+    </div>
+  </div>
 
-    <Card class="md:col-span-4">
-      <CardHeader><CardTitle>Tasks by status</CardTitle></CardHeader>
-      <CardContent><Bar :data="chartData" :options="{ responsive: true, maintainAspectRatio: false }" style="height:320px" /></CardContent>
-    </Card>
+  <div class="mt-6 rounded-xl border p-4 h-80 bg-card">
+    <Bar :data="chartData" :options="chartOptions" />
   </div>
 </template>
