@@ -1,51 +1,59 @@
 import { defineStore } from 'pinia'
-import type { Task, TaskCounts, TaskStatus } from '@/types'
+import { ref, computed } from 'vue'
+import type { Task, TaskCounts, TaskStatus, CreateTaskDto, UpdateTaskDto } from '../types'
+import { useApi } from '../services/api'
 
-export const useTasksStore = defineStore('tasks', {
-  state: () => ({
-    items: [] as Task[],
-    counts: { in_progress: 0, reviews: 0, completed: 0, done: 0 } as TaskCounts,
-    loading: false
-  }),
-  getters: {
-    byStatus: (s) => (st: TaskStatus) => s.items.filter(t => t.status === st)
-  },
-  actions: {
-    async fetchAll() {
-      this.loading = true
-      const api = useApi()
-      const [tasks, counts] = await Promise.all([
-        api.get<Task[]>('/tasks'),
-        api.get<TaskCounts>('/tasks/counts')
-      ])
-      this.items = tasks.data
-      this.counts = counts.data
-      this.loading = false
-    },
-    async create(payload: { title: string; status: TaskStatus; category_ids: number[]; assignee_ids: number[] }) {
-      const api = useApi()
-      const { data } = await api.post<Task>('/tasks', payload)
-      this.items.push(data)
-      await this.refreshCounts()
-      return data
-    },
-    async update(id: number, payload: Partial<Pick<Task, 'title' | 'status'>> & { category_ids?: number[]; assignee_ids?: number[] }) {
-      const api = useApi()
-      const { data } = await api.patch<Task>(`/tasks/${id}`, payload)
-      this.items = this.items.map(t => (t.id === id ? data : t))
-      await this.refreshCounts()
-      return data
-    },
-    async softDelete(id: number) {
-      const api = useApi()
-      await api.delete(`/tasks/${id}`)
-      this.items = this.items.filter(t => t.id !== id)
-      await this.refreshCounts()
-    },
-    async refreshCounts() {
-      const api = useApi()
-      const { data } = await api.get<TaskCounts>('/tasks/counts')
-      this.counts = data
+export const useTasksStore = defineStore('tasks', () => {
+  const api = useApi()
+  const items = ref<Task[]>([])
+  const counts = ref<TaskCounts>({ in_progress: 0, reviews: 0, completed: 0, done: 0 })
+  const loading = ref(false)
+
+  async function fetchAll() {
+    loading.value = true
+    try {
+      const [t, c] = await Promise.all([api.get<Task[]>('/tasks'), api.get<TaskCounts>('/tasks/counts')])
+      items.value = t.data
+      counts.value = c.data
+    } finally {
+      loading.value = false
     }
   }
+
+  async function create(payload: CreateTaskDto) {
+    const { data } = await api.post<Task>('/tasks', payload)
+    items.value.push(data)
+    await refreshCounts()
+    return data
+  }
+
+  async function update(id: number, payload: UpdateTaskDto) {
+    const { data } = await api.patch<Task>(`/tasks/${id}`, payload)
+    const i = items.value.findIndex((t) => t.id === id)
+    if (i > -1) items.value[i] = data
+    await refreshCounts()
+    return data
+  }
+
+  async function remove(id: number) {
+    await api.delete(`/tasks/${id}`)
+    items.value = items.value.filter((t) => t.id !== id)
+    await refreshCounts()
+  }
+
+  async function restore(id: number) {
+    const { data } = await api.post<Task>(`/tasks/${id}/restore`)
+    items.value.push(data)
+    await refreshCounts()
+    return data
+  }
+
+  async function refreshCounts() {
+    const { data } = await api.get<TaskCounts>('/tasks/counts')
+    counts.value = data
+  }
+
+  const byStatus = (s: TaskStatus) => computed(() => items.value.filter((t) => t.status === s))
+
+  return { items, counts, loading, fetchAll, create, update, remove, restore, byStatus }
 })
