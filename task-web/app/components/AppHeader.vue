@@ -21,7 +21,7 @@ const { isDark, toggle } = useDark()
         <Moon v-else class="h-5 w-5" />
       </Button>
 
-      <Button class="bg-emerald-600 hover:bg-emerald-700" @click="emit('create')">
+      <Button class="bg-teal-600 hover:bg-emerald-700" @click="emit('create')">
         <Plus class="mr-2 h-4 w-4" /> Add New
       </Button>
     </div>
