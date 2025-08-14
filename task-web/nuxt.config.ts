@@ -3,12 +3,16 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-  modules: ['@pinia/nuxt', 'shadcn-nuxt'],
+  modules: ['@pinia/nuxt', 'shadcn-nuxt'], 
   css: ['~/assets/css/tailwind.css'],
   vite: {
-    plugins: [
-      tailwindcss(),
-    ],
+    plugins: [tailwindcss()],
+  },
+  alias: {
+    '~/': '/<rootDir>/',
+    '@/': '/<rootDir>/',
+    '~~/': '/<rootDir>/',
+    '@@/': '/<rootDir>/'
   },
   shadcn: {
     /**

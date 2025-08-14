@@ -2,8 +2,11 @@
   "compilerOptions": {
     "paths": {
       "~/*": ["./*"],
-      "@/*": ["./*"]
-    }
+      "@/*": ["./*"],
+      "#imports": ["./.nuxt/imports.d.ts"],
+      "#app": ["./.nuxt/types/app.d.ts"]
+    },
+    "baseUrl": "."
   },
   "files": [],
   "references": [
