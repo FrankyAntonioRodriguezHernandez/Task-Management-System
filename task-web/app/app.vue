@@ -22,6 +22,7 @@
 
     <main class="p-4">
       <NuxtPage />
+      <SonnerToaster position="top-right" />
     </main>
 
     <TaskFormDialog v-model:open="openCreate" />
