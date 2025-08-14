@@ -1,41 +1,55 @@
 <script setup lang="ts">
 import type { Task } from '../types'
-import { Card, CardContent } from './ui/card'
-import { Badge } from './ui/badge'
-import { MessageCircle, Paperclip } from 'lucide-vue-next'
+import { computed } from 'vue'
 
-defineProps<{ task: Task }>()
+const props = defineProps<{ task: Task }>()
+const emit = defineEmits<{ (e: 'edit', task: Task): void }>()
+
+const initials = computed(() =>
+  (props.task.assignees || []).slice(0, 3).map(a => a.full_name.split(' ').map(p => p[0]).join('').slice(0,2))
+)
 </script>
 
 <template>
-  <Card class="hover:shadow-sm transition">
-    <CardContent class="p-4 space-y-3">
-      <h3 class="font-medium">{{ task.title }}</h3>
+  <div class="rounded-xl border p-3 bg-card text-card-foreground hover:shadow-sm transition">
+    <div class="font-medium mb-2">{{ task.title }}</div>
 
-      <div class="flex flex-wrap gap-2">
-        <Badge v-for="c in task.categories" :key="c.id"
-               class="border"
-               :style="{ borderColor: c.color + '33', color: c.color }">
-          {{ c.name }}
-        </Badge>
+    <div class="flex flex-wrap gap-2 mb-3">
+      <span
+        v-for="c in task.categories"
+        :key="c.id"
+        class="px-2 py-0.5 text-xs rounded-full border"
+        :style="{ backgroundColor: c.color + '22', color: c.color }"
+      >
+        {{ c.name }}
+      </span>
+    </div>
+
+    <div class="flex items-center justify-between text-xs text-muted-foreground">
+      <div class="flex items-center gap-3">
+        <span>#{{ task.id }}</span>
+        <span class="inline-flex items-center gap-1">
+          <i class="i-lucide-message-square w-4 h-4" />
+          {{ task.comments_count ?? 0 }}
+        </span>
+        <span class="inline-flex items-center gap-1">
+          <i class="i-lucide-paperclip w-4 h-4" />
+          {{ task.attachments_count ?? 0 }}
+        </span>
       </div>
 
-      <div class="flex items-center justify-between text-sm text-muted-foreground">
-        <div class="flex items-center gap-4">
-          <span>#{{ task.id }}</span>
-          <span class="inline-flex items-center gap-1">
-            <MessageCircle class="h-4 w-4" /> {{ task.comments_count }}
-          </span>
-          <span class="inline-flex items-center gap-1">
-            <Paperclip class="h-4 w-4" /> {{ task.attachments_count }}
-          </span>
-        </div>
-        <div class="flex -space-x-2">
-          <img v-for="u in task.assignees.slice(0,3)" :key="u.id"
-               :src="u.avatar_url || `https://i.pravatar.cc/24?u=${u.id}`"
-               class="h-6 w-6 rounded-full ring-2 ring-background" />
+      <div class="flex -space-x-2">
+        <div
+          v-for="(ini, i) in initials"
+          :key="i"
+          class="h-7 w-7 rounded-full bg-primary/10 text-primary border flex items-center justify-center text-[10px]"
+          :title="task.assignees[i]?.full_name"
+        >
+          {{ ini }}
         </div>
       </div>
-    </CardContent>
-  </Card>
+    </div>
+
+    <button class="mt-3 text-xs underline" @click="emit('edit', task)">Edit</button>
+  </div>
 </template>
