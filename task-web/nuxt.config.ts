@@ -1,14 +1,8 @@
-// nuxt.config.ts
+import tailwindcss from '@tailwindcss/vite'
+
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/tailwindcss', '@pinia/nuxt'],
-
-  tailwindcss: {
-    cssPath: 'assets/css/tailwind.css',
-    configPath: 'tailwind.config.ts',
-    viewer: true,
-  },
-
-  typescript: { strict: true },
-  runtimeConfig: { public: { apiBase: 'http://localhost:3333' } },
-  compatibilityDate: '2025-08-13',
+  compatibilityDate: '2025-07-15',
+  devtools: { enabled: true },
+  css: ['~/assets/css/main.css'],
+  vite: { plugins: [tailwindcss()] },
 })
