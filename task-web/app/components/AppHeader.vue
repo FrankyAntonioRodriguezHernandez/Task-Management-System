@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Button } from '../../components/ui/button'
+import { Button } from './ui/button'
 import { Sun, Moon, Plus } from 'lucide-vue-next'
 const emit = defineEmits<{ (e: 'create'): void }>()
 const { isDark, toggle } = useDark()

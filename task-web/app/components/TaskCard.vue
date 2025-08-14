@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { Task } from '../types'
-import { Card, CardContent } from '../../components/ui/card'
-import { Badge } from '../../components/ui/badge'
+import { Card, CardContent } from './ui/card'
+import { Badge } from './ui/badge'
 import { MessageCircle, Paperclip } from 'lucide-vue-next'
 
 defineProps<{ task: Task }>()

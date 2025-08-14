@@ -1,42 +1,50 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, watch } from 'vue'
 import { z } from 'zod'
-import { useForm, useField } from 'vee-validate'
+import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import type { TaskStatus, Task, TaskCategory, User } from '../types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from '@/components/ui/select'
+import type { Task, TaskStatus } from '../types'
+
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from './ui/dialog'
+import { Button } from './ui/button'
+import { Input } from './ui/input'
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from './ui/select'
+
 import { toast } from 'vue-sonner'
 import { useTasksStore } from '../stores/tasks'
+import { useMetadata } from '../composables/useMetadata'
 
 const open = defineModel<boolean>('open', { default: false })
 const editTask = defineModel<Task | null>('task', { default: null })
 
-// Data para selects (cárgalos de tu backend si quieres)
-const categories = ref<TaskCategory[]>([])
-const users = ref<User[]>([])
+const { users, categories } = useMetadata()
 
 const isEdit = computed(() => !!editTask.value)
+
 const schema = toTypedSchema(z.object({
   title: z.string().min(1, 'Title required'),
-  status: z.enum(['in_progress','reviews','completed','done']),
+  status: z.enum(['in_progress', 'reviews', 'completed', 'done'] as const),
   category_ids: z.array(z.number()).default([]),
   assignee_ids: z.array(z.number()).default([]),
 }))
 
-const { handleSubmit, values, setValues } = useForm({ validationSchema: schema, initialValues: {
-  title: '', status: 'in_progress', category_ids: [], assignee_ids: []
-}})
+const { handleSubmit, values, setValues } = useForm({
+  validationSchema: schema,
+  initialValues: {
+    title: '',
+    status: 'in_progress' as TaskStatus,
+    category_ids: [],
+    assignee_ids: [],
+  },
+})
 
 watch(open, (v) => {
   if (v && editTask.value) {
     setValues({
       title: editTask.value.title,
       status: editTask.value.status,
-      category_ids: editTask.value.categories.map(c => c.id),
-      assignee_ids: editTask.value.assignees.map(a => a.id),
+      category_ids: editTask.value.categories?.map(c => c.id) ?? [],
+      assignee_ids: editTask.value.assignees?.map(a => a.id) ?? [],
     })
   } else if (v) {
     setValues({ title: '', status: 'in_progress', category_ids: [], assignee_ids: [] })
@@ -54,8 +62,8 @@ const onSubmit = handleSubmit(async (payload) => {
       toast.success('Task created')
     }
     open.value = false
-  } catch (e:any) {
-    toast.error(e?.message || 'Error')
+  } catch (e: any) {
+    toast.error(e?.message ?? 'Error')
   }
 })
 </script>
@@ -88,7 +96,6 @@ const onSubmit = handleSubmit(async (payload) => {
           </Select>
         </div>
 
-        <!-- MultiSelect simple con checkboxes -->
         <div>
           <label class="text-sm mb-1 block">Categories</label>
           <div class="grid grid-cols-2 gap-2">
