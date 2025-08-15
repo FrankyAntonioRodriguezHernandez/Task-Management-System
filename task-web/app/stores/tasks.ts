@@ -122,6 +122,16 @@ export const useTasksStore = defineStore('tasks', () => {
     })
     await fetchAll()
   }
+  async function fetchComments(taskId: number) {
+  const { data } = await api.get(`/tasks/${taskId}/comments`)
+  return data
+}
+
+async function fetchAttachments(taskId: number) {
+  const { data } = await api.get(`/tasks/${taskId}/attachments`)
+  return data
+}
+
 
   const byStatus = (s: TaskStatus) =>
     computed(() => items.value.filter((t) => t.status === s))
@@ -141,5 +151,7 @@ export const useTasksStore = defineStore('tasks', () => {
     addComment,
     uploadAttachment,
     byStatus,
+    fetchComments,
+    fetchAttachments, 
   }
 })
