@@ -4,19 +4,23 @@ import { z } from 'zod'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
 import type { Task, TaskStatus } from '../types'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from './ui/dialog'
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
+} from './ui/dialog'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem } from './ui/select'
+import {
+  Select, SelectTrigger, SelectValue, SelectContent, SelectGroup, SelectItem
+} from './ui/select'
 import { toast } from 'vue-sonner'
 import { useTasksStore } from '../stores/tasks'
 import { useMetadata } from '../composables/useMetadata'
 
 const open = defineModel<boolean>('open', { default: false })
 const editTask = defineModel<Task | null>('task', { default: null })
-
 const isEdit = computed(() => !!editTask.value)
 
+/* zod schema */
 const schema = toTypedSchema(
   z.object({
     title: z.string().min(1, 'Title required'),
@@ -36,44 +40,11 @@ const [status] = defineField<'status'>('status')
 const [category_ids] = defineField<'category_ids'>('category_ids')
 const [assignee_ids] = defineField<'assignee_ids'>('assignee_ids')
 
+/* metadata */
 const { users, categories } = useMetadata()
 const store = useTasksStore()
-type UiUser = { id: number; full_name?: string; name?: string; avatar_url?: string | null }
-type UiCategory = { id: number; name: string }
 
-const displayUsers = computed<UiUser[]>(() => {
-  const metaUsers = (users?.value ?? users ?? []) as UiUser[]
-  if (metaUsers && metaUsers.length) return metaUsers
-
-// fallback: recolectar de las tareas existentes
-  const map = new Map<number, UiUser>()
-  for (const t of store.items as any[]) {
-    for (const a of (t?.assignees ?? [])) {
-      map.set(Number(a.id), {
-        id: Number(a.id),
-        full_name: a.full_name ?? a.name,
-        avatar_url: a.avatar_url ?? null
-      })
-    }
-  }
-  return Array.from(map.values())
-})
-
-const displayCategories = computed<UiCategory[]>(() => {
-  const metaCats = (categories?.value ?? categories ?? []) as UiCategory[]
-  if (metaCats && metaCats.length) return metaCats
-
-  // fallback: recolectar de tareas
-  const map = new Map<number, UiCategory>()
-  for (const t of store.items as any[]) {
-    for (const c of (t?.categories ?? [])) {
-      map.set(Number(c.id), { id: Number(c.id), name: c.name })
-    }
-  }
-  return Array.from(map.values())
-})
-
-// Right column state
+/* Right column state */
 const commentText = ref('')
 const file = ref<File | null>(null)
 function onFileChange(e: Event) {
@@ -81,14 +52,59 @@ function onFileChange(e: Event) {
   file.value = input.files?.[0] ?? null
 }
 
-// Fill values on open edit, clear on close
+/* display lists */
+type UiUser = { id: number; full_name: string | null; email: string | null; avatar_url: string | null }
+type UiCategory = { id: number; name: string }
+
+const displayUsers = computed<UiUser[]>(() => {
+  const raw = Array.isArray((users as any)?.value) ? (users as any).value
+           : Array.isArray(users as any) ? (users as any) : []
+  let list = (raw as any[]).map(u => ({
+    id: Number(u.id),
+    full_name: u.full_name ?? u.fullName ?? null,
+    email: u.email ?? null,
+    avatar_url: u.avatar_url ?? null,
+  }))
+  if (list.length) return list
+  // fallback from tasks
+  const map = new Map<number, UiUser>()
+  for (const t of (store.items as any[])) {
+    for (const a of (t?.assignees ?? [])) {
+      map.set(Number(a.id), {
+        id: Number(a.id),
+        full_name: a.full_name ?? a.fullName ?? null,
+        email: a.email ?? null,
+        avatar_url: a.avatar_url ?? null,
+      })
+    }
+  }
+  list = Array.from(map.values())
+  return list
+})
+
+const displayCategories = computed<UiCategory[]>(() => {
+  const raw = Array.isArray((categories as any)?.value) ? (categories as any).value
+           : Array.isArray(categories as any) ? (categories as any) : []
+  let list = (raw as any[]).map(c => ({ id: Number(c.id), name: String(c.name) }))
+  if (list.length) return list
+  const map = new Map<number, UiCategory>()
+  for (const t of (store.items as any[])) {
+    for (const c of (t?.categories ?? [])) {
+      map.set(Number(c.id), { id: Number(c.id), name: String(c.name) })
+    }
+  }
+  list = Array.from(map.values())
+  return list
+})
+
+/* sync on open/close */
 watch(open, (v) => {
   if (v && editTask.value) {
     setValues({
       title: editTask.value.title,
       status: editTask.value.status as TaskStatus,
-      category_ids: (editTask.value as any).categories?.map((c: any) => c.id) ?? [],
-      assignee_ids: (editTask.value as any).assignees?.map((a: any) => a.id) ?? [],
+      category_ids: (editTask.value as any).categories?.map((c:any)=>c.id) ?? [],
+      assignee_ids: (editTask.value as any).assignees?.map((a:any)=>a.id) ?? [],
     })
   }
   if (!v) {
@@ -98,6 +114,7 @@ watch(open, (v) => {
   }
 })
 
+/* submit left column */
 const onSubmit = handleSubmit(async (p) => {
   const payload = {
     title: p.title,
@@ -105,7 +122,6 @@ const onSubmit = handleSubmit(async (p) => {
     category_ids: (p.category_ids || []).map(Number),
     assignee_ids: (p.assignee_ids || []).map(Number),
   }
-
   try {
     if (isEdit.value && editTask.value) {
       await store.update(editTask.value.id, payload)
@@ -120,45 +136,35 @@ const onSubmit = handleSubmit(async (p) => {
   }
 })
 
-// Right column actions
+/* right column actions */
 async function submitComment() {
-  if (!isEdit.value || !editTask.value) {
-    return toast.error('Open an existing task to add a comment')
-  }
+  if (!isEdit.value || !editTask.value) return toast.error('Open an existing task to add a comment')
   const body = commentText.value.trim()
   if (!body) return toast.error('Comment is empty')
   try {
     await store.addComment(editTask.value.id, body)
     toast.success('Comment added')
     commentText.value = ''
-  } catch (e:any) {
-    toast.error('Could not add comment')
-  }
+  } catch { toast.error('Could not add comment') }
 }
 
 async function submitAttachment() {
-  if (!isEdit.value || !editTask.value) {
-    return toast.error('Open an existing task to add an attachment')
-  }
+  if (!isEdit.value || !editTask.value) return toast.error('Open an existing task to add an attachment')
   if (!file.value) return toast.error('Select a file')
   try {
     await store.uploadAttachment(editTask.value.id, file.value)
     toast.success('Attachment uploaded')
     file.value = null
-  } catch (e:any) {
-    toast.error('Could not upload attachment')
-  }
+  } catch { toast.error('Could not upload attachment') }
 }
 
 async function softDelete() {
   if (!isEdit.value || !editTask.value) return
   try {
-    await store.remove(editTask.value.id) // soft delete from your store
+    await store.remove(editTask.value.id)
     toast.success('Task deleted')
     open.value = false
-  } catch (e:any) {
-    toast.error('Could not delete task')
-  }
+  } catch { toast.error('Could not delete task') }
 }
 </script>
 
@@ -172,7 +178,7 @@ async function softDelete() {
         </DialogDescription>
       </DialogHeader>
 
-      <!-- Two columns (compact & centered) -->
+      <!-- Two compact columns (faithful & centered) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- LEFT: original form -->
         <form class="space-y-4" @submit.prevent="onSubmit">
@@ -198,22 +204,25 @@ async function softDelete() {
 
           <div>
             <label class="text-sm mb-1 block">Categories</label>
-            <div class="grid grid-cols-2 gap-2">
-              <label v-for="c in categories" :key="c.id" class="flex items-center gap-2">
+            <div v-if="displayCategories.length" class="grid grid-cols-2 gap-2">
+              <label v-for="c in displayCategories" :key="c.id" class="flex items-center gap-2">
                 <input type="checkbox" :value="c.id" v-model="category_ids" />
-                <span>{{ c.name }}</span>
+                <span class="text-sm">{{ c.name }}</span>
               </label>
             </div>
+            <p v-else class="text-xs text-muted-foreground">No categories available</p>
           </div>
 
           <div>
             <label class="text-sm mb-1 block">Assignees</label>
-            <div class="grid grid-cols-2 gap-2">
-              <label v-for="u in users" :key="u.id" class="flex items-center gap-2">
+            <div v-if="displayUsers.length" class="grid grid-cols-2 gap-2">
+              <label v-for="u in displayUsers" :key="u.id" class="flex items-center gap-2">
                 <input type="checkbox" :value="u.id" v-model="assignee_ids" />
-                <span>{{ u.full_name }}</span>
+                <img v-if="u.avatar_url" :src="u.avatar_url" class="h-5 w-5 rounded-full object-cover" alt="" />
+                <span class="text-sm">{{ u.full_name || u.email || ('User #' + u.id) }}</span>
               </label>
             </div>
+            <p v-else class="text-xs text-muted-foreground">No users available</p>
           </div>
 
           <DialogFooter>
@@ -223,9 +232,8 @@ async function softDelete() {
           </DialogFooter>
         </form>
 
-        <!-- RIGHT: comment / attachment / delete (only useful in edit) -->
+        <!-- RIGHT: comment / attachment / delete (stacked) -->
         <div class="space-y-6 text-center">
-          <!-- Add Comment -->
           <div class="space-y-2">
             <div class="text-sm font-medium">Add Comment</div>
             <textarea
@@ -234,12 +242,9 @@ async function softDelete() {
               class="w-full rounded-md border p-2 text-sm"
               placeholder="Write your comment..."
             ></textarea>
-            <Button variant="outline" class="w-full" @click="submitComment">
-              Send Comment
-            </Button>
+            <Button variant="outline" class="w-full" @click="submitComment">Send Comment</Button>
           </div>
 
-          <!-- Add Attachment -->
           <div class="space-y-2">
             <div class="text-sm font-medium">Add Attachment</div>
             <input
@@ -248,17 +253,12 @@ async function softDelete() {
               @change="onFileChange"
               class="text-sm w-full"
             />
-            <Button :disabled="!file" variant="outline" class="w-full" @click="submitAttachment">
-              Upload
-            </Button>
+            <Button :disabled="!file" variant="outline" class="w-full" @click="submitAttachment">Upload</Button>
           </div>
 
-          <!-- Delete (soft) -->
           <div class="space-y-2">
             <div class="text-sm font-medium text-red-600">Delete Task</div>
-            <Button class="w-full bg-red-600 hover:bg-red-700" @click="softDelete">
-              Delete
-            </Button>
+            <Button class="w-full bg-red-600 hover:bg-red-700" @click="softDelete">Delete</Button>
           </div>
         </div>
       </div>

@@ -6,13 +6,11 @@ import { Separator } from './ui/separator'
 import { File, MessageCircleMore } from 'lucide-vue-next'
 
 const props = defineProps<{ task: Task }>()
-const emit = defineEmits<{ (e: 'edit', task: Task): void }>()
+const emit  = defineEmits<{ (e: 'edit', task: Task): void }>()
 
 const firstAssignees = computed(() => (props.task as any)?.assignees?.slice(0, 3) ?? [])
-const moreAssigneesCount = computed(() => {
-  const total = (props.task as any)?.assignees?.length ?? 0
-  return total > 3 ? total - 3 : 0
-})
+const moreAssignees  = computed(() => Math.max(((props.task as any)?.assignees?.length ?? 0) - 3, 0))
+
 const categoryBadgeStyle = (c: any) => {
   const color = c?.color || ''
   return color ? `bg-[${color}] text-white` : 'bg-muted text-foreground'
@@ -22,18 +20,13 @@ function openEdit() { emit('edit', props.task) }
 
 <template>
   <Card class="relative overflow-hidden rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow">
-    <!-- Clickable area: header + content (abre editor) -->
+    <!-- Clickable area (header + content) -->
     <div class="cursor-pointer" @click="openEdit">
-      <CardHeader class="px-4 pt-4 pr-12">
-        <div class="flex items-start justify-between gap-2">
-          <CardTitle class="text-base leading-6">
-            {{ props.task.title }}
-          </CardTitle>
-        </div>
+      <CardHeader class="px-4 pt-4 pr-3">
+        <CardTitle class="text-base leading-6">{{ props.task.title }}</CardTitle>
       </CardHeader>
 
       <CardContent class="px-4 pb-2">
-        <!-- Category tags -->
         <div v-if="(props.task as any)?.categories?.length" class="flex flex-wrap gap-2">
           <Badge
             v-for="c in (props.task as any).categories"
@@ -50,7 +43,7 @@ function openEdit() { emit('edit', props.task) }
 
     <Separator class="mx-4 my-2" />
 
-    <!-- Footer (no abre editor) -->
+    <!-- Footer -->
     <CardFooter class="flex items-center justify-between gap-4 pt-2 px-4 pb-4">
       <div class="text-xs text-muted-foreground font-medium">#{{ props.task.id }}</div>
 
@@ -77,14 +70,14 @@ function openEdit() { emit('edit', props.task) }
             v-else
             class="h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] uppercase"
           >
-            {{ a.full_name?.slice(0,2) }}
+            {{ (a.full_name || a.email || 'U' + a.id).slice(0,2) }}
           </div>
         </template>
         <div
-          v-if="moreAssigneesCount"
+          v-if="moreAssignees"
           class="h-6 w-6 rounded-full bg-muted text-[10px] ring-2 ring-background flex items-center justify-center"
         >
-          +{{ moreAssigneesCount }}
+          +{{ moreAssignees }}
         </div>
       </div>
     </CardFooter>
