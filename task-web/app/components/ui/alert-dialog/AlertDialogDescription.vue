@@ -6,7 +6,7 @@ import {
   AlertDialogDescription,
 
 } from "reka-ui"
-import { cn } from '~/lib/utils'
+import { cn } from '../../../lib/utils'
 
 const props = defineProps<AlertDialogDescriptionProps & { class?: HTMLAttributes["class"] }>()
 

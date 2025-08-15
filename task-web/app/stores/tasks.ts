@@ -74,8 +74,22 @@ async function update(id: number, payload: UpdateTaskDto) {
     const { data } = await api.get<TaskCounts>('/tasks/counts')
     counts.value = data
   }
+  
+  async function addComment(taskId: number, comment: string) {
+  await api.post(`/tasks/${taskId}/comments`, { comment })
+  await fetchAll()
+}
+
+async function uploadAttachment(taskId: number, file: File) {
+  const form = new FormData()
+  form.append('file', file)
+  await api.post(`/tasks/${taskId}/attachments`, form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  })
+  await fetchAll()
+}
 
   const byStatus = (s: TaskStatus) => computed(() => items.value.filter((t) => t.status === s))
 
-  return { items, counts, loading, fetchAll, create, update, remove, restore, byStatus }
+  return { items, counts, loading, fetchAll, create, update, remove, restore, byStatus,addComment, uploadAttachment }
 })
