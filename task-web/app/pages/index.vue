@@ -6,7 +6,7 @@ import type { Task } from '../types'
 import { Button } from '../components/ui/button'
 import { useTasksStore } from '../stores/tasks'
 import { useMetadata } from '../composables/useMetadata'
-import { MoreHorizontal, ChevronDown, Sun, Moon } from 'lucide-vue-next'
+import { ChevronDown, Sun, Moon } from 'lucide-vue-next'
 
 /* ---------- Types ---------- */
 type UserLite = {
@@ -20,7 +20,7 @@ type UserLite = {
 const store = useTasksStore()
 const { users } = useMetadata()
 
-/* ---------- Helper: normalizar a array ---------- */
+/* ---------- Helpers ---------- */
 function toArray<T = unknown>(input: unknown): T[] {
   if (input && typeof input === 'object' && 'value' in (input as any)) {
     const v = (input as any).value
@@ -28,6 +28,23 @@ function toArray<T = unknown>(input: unknown): T[] {
   }
   if (Array.isArray(input)) return input as T[]
   return []
+}
+
+/** Pool de imágenes locales (coloca archivos en /public/avatars/) */
+const AVATAR_POOL = [
+  '/avatars/1.jpg', '/avatars/2.jpg', '/avatars/3.jpg', '/avatars/4.jpg',
+  '/avatars/5.jpg', '/avatars/6.jpg', '/avatars/7.jpg', '/avatars/8.jpg',
+]
+
+/** Asegura avatar_url siempre: si falta, asigna uno del pool */
+function withAvatar(u: UserLite, i: number): Required<UserLite> {
+  const url = u.avatar_url || AVATAR_POOL[i % AVATAR_POOL.length] || null
+  return {
+    id: Number(u.id),
+    full_name: u.full_name ?? null,
+    email: u.email ?? null,
+    avatar_url: url,
+  }
 }
 
 /* ---------- Carga de tareas ---------- */
@@ -51,11 +68,13 @@ async function ensureTasksLoaded() {
     loading.value = false
   }
 }
-
 onMounted(() => { void ensureTasksLoaded() })
 
 /* ---------- Header: team avatars ---------- */
-const teamAvatars = computed<UserLite[]>(() => toArray<UserLite>(users))
+const teamAvatars = computed(() => {
+  const arr = toArray<UserLite>(users)
+  return arr.slice(0, 8).map((u, i) => withAvatar(u, i))
+})
 
 /* ---------- Lists by status ---------- */
 const items = computed<Task[]>(() => toArray<Task>((store as any).items))
@@ -72,7 +91,6 @@ function handleCreate() { handleEdit(null) }
 
 /* ---------- Dark mode toggle ---------- */
 const isDark = ref(false)
-
 function toggleDark() {
   isDark.value = !isDark.value
   const root = document.documentElement
@@ -84,7 +102,6 @@ function toggleDark() {
     localStorage.setItem('theme', 'light')
   }
 }
-
 onMounted(() => {
   const theme = localStorage.getItem('theme')
   if (theme === 'dark') {
@@ -103,19 +120,12 @@ onMounted(() => {
       <div class="flex items-center gap-3">
         <!-- Team avatars -->
         <div class="hidden md:flex -space-x-2">
-          <template v-for="u in teamAvatars.slice(0,5)" :key="u.id">
+          <template v-for="u in teamAvatars" :key="u.id">
             <img
-              v-if="u.avatar_url"
               :src="u.avatar_url!"
               :alt="u.full_name || u.email || ('User #' + u.id)"
               class="h-8 w-8 rounded-full ring-2 ring-background object-cover"
             />
-            <div
-              v-else
-              class="h-8 w-8 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] uppercase dark:bg-gray-700 dark:text-gray-200"
-            >
-              {{ (u.full_name || u.email || 'U' + u.id)?.slice(0,2) }}
-            </div>
           </template>
         </div>
 
@@ -125,34 +135,23 @@ onMounted(() => {
           <Moon v-else class="h-5 w-5" />
         </Button>
 
+        <!-- Sort y Filter (dejamos estos) -->
         <Button variant="outline" class="gap-2">
-          Import/Export <ChevronDown class="h-4 w-4" />
+          Sort by <ChevronDown class="h-4 w-4" />
+        </Button>
+        <Button variant="outline" class="gap-2">
+          Filter <ChevronDown class="h-4 w-4" />
         </Button>
 
+        <!-- Add New -->
         <Button class="bg-emerald-600 hover:bg-emerald-700 text-white" @click="handleCreate">
           + Add New
         </Button>
       </div>
     </div>
 
-    <!-- Controls -->
-    <div class="mt-6 flex flex-wrap items-center gap-2">
-      <Button variant="outline" class="gap-2">List View</Button>
-      <Button variant="outline" class="gap-2">Sort by</Button>
-      <Button variant="outline" class="gap-2">Filter</Button>
-      <div class="ml-auto">
-        <Button variant="ghost" size="icon">
-          <MoreHorizontal class="h-5 w-5" />
-        </Button>
-      </div>
-    </div>
-
-    <!-- Loading / Error -->
-    <div v-if="loading" class="mt-10 text-sm text-muted-foreground dark:text-gray-400">Loading tasks…</div>
-    <div v-else-if="loadError" class="mt-10 text-sm text-red-600">{{ loadError }}</div>
-
     <!-- Board -->
-    <div v-else class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
       <TaskColumn title="In Progress" color="bg-purple-500" :tasks="inProgress" @edit="handleEdit"/>
       <TaskColumn title="Reviews" color="bg-orange-500" :tasks="reviews" @edit="handleEdit"/>
       <TaskColumn title="Completed" color="bg-green-500" :tasks="completed" @edit="handleEdit"/>
