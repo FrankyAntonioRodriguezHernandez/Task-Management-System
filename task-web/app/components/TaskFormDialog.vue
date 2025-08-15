@@ -256,8 +256,8 @@ async function softDelete() {
             <Button :disabled="!file" variant="outline" class="w-full" @click="submitAttachment">Upload</Button>
           </div>
 
-          <div class="space-y-2">
-            <div class="text-sm font-medium text-red-600">Delete Task</div>
+          <div class="space-y-8">
+            <div class="text-sm font-medium py-1"></div>
             <Button class="w-full bg-red-600 hover:bg-red-700" @click="softDelete">Delete</Button>
           </div>
         </div>
