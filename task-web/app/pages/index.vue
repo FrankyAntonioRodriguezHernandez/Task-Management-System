@@ -1,51 +1,102 @@
 <script setup lang="ts">
-import { ref } from 'vue'
-import TaskColumn from '../components/TaskColumn.vue'
-import TaskFormDialog from '../components/TaskFormDialog.vue'
-import type { Task } from '../types'
+import { ref, onMounted } from 'vue'
 import { useTasksStore } from '../stores/tasks'
-
+import TaskCard from '../components/TaskCard.vue'
+import TaskSheet from '../components/TaskSheet.vue'
 
 const store = useTasksStore()
-await store.fetchAll()
+const sheetOpen = ref(false)
+const editing = ref(null as any)
+const activeTab = ref<'details'|'comments'|'attachments'>('details')
 
-const openEdit = ref(false)
-const selected = ref<Task | null>(null)
-
-function handleEdit(task: Task) {
-  selected.value = task
-  openEdit.value = true
+function openCreate() {
+  editing.value = null
+  activeTab.value = 'details'
+  sheetOpen.value = true
 }
+function openTask(payload: { task:any; tab?: 'details'|'comments'|'attachments' }) {
+  editing.value = payload.task
+  activeTab.value = payload.tab || 'details'
+  sheetOpen.value = true
+}
+
+onMounted(() => store.fetchAll())
 </script>
 
 <template>
-  <div class="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-    <TaskColumn
-      title="In Progress"
-      colorClass="bg-purple-500"
-      :tasks="store.byStatus('in_progress').value"
-      @edit="handleEdit"
-    />
-    <TaskColumn
-      title="Reviews"
-      colorClass="bg-orange-500"
-      :tasks="store.byStatus('reviews').value"
-      @edit="handleEdit"
-    />
-    <TaskColumn
-      title="Completed"
-      colorClass="bg-green-500"
-      :tasks="store.byStatus('completed').value"
-      @edit="handleEdit"
-    />
-    <TaskColumn
-      title="Done"
-      colorClass="bg-blue-500"
-      :tasks="store.byStatus('done').value"
-      @edit="handleEdit"
-    />
-  </div>
+  <main class="container mx-auto px-4 py-6 grid gap-6 grid-cols-1 md:grid-cols-4">
+    <section class="rounded-xl p-3 bg-violet-50/60">
+      <header class="flex items-center gap-2 mb-3">
+        <span class="h-2 w-2 rounded-full bg-violet-500"></span>
+        <h2 class="font-semibold">In Progress</h2>
+        <span class="ml-1 text-xs bg-white px-2 py-0.5 rounded-full border">
+          {{ store.counts.in_progress }}
+        </span>
+      </header>
+      <div class="space-y-3">
+        <TaskCard
+          v-for="t in store.byStatus('in_progress').value"
+          :key="t.id"
+          :task="t"
+          @open="openTask"
+        />
+      </div>
+    </section>
 
-  <!-- Modal editar -->
-  <TaskFormDialog v-model:open="openEdit" v-model:task="selected" />
+    <section class="rounded-xl p-3 bg-amber-50/60">
+      <header class="flex items-center gap-2 mb-3">
+        <span class="h-2 w-2 rounded-full bg-amber-500"></span>
+        <h2 class="font-semibold">Reviews</h2>
+        <span class="ml-1 text-xs bg-white px-2 py-0.5 rounded-full border">
+          {{ store.counts.reviews }}
+        </span>
+      </header>
+      <div class="space-y-3">
+        <TaskCard
+          v-for="t in store.byStatus('reviews').value"
+          :key="t.id"
+          :task="t"
+          @open="openTask"
+        />
+      </div>
+    </section>
+
+    <section class="rounded-xl p-3 bg-emerald-50/60">
+      <header class="flex items-center gap-2 mb-3">
+        <span class="h-2 w-2 rounded-full bg-emerald-500"></span>
+        <h2 class="font-semibold">Completed</h2>
+        <span class="ml-1 text-xs bg-white px-2 py-0.5 rounded-full border">
+          {{ store.counts.completed }}
+        </span>
+      </header>
+      <div class="space-y-3">
+        <TaskCard
+          v-for="t in store.byStatus('completed').value"
+          :key="t.id"
+          :task="t"
+          @open="openTask"
+        />
+      </div>
+    </section>
+
+    <section class="rounded-xl p-3 bg-sky-50/60">
+      <header class="flex items-center gap-2 mb-3">
+        <span class="h-2 w-2 rounded-full bg-sky-500"></span>
+        <h2 class="font-semibold">Done</h2>
+        <span class="ml-1 text-xs bg-white px-2 py-0.5 rounded-full border">
+          {{ store.counts.done }}
+        </span>
+      </header>
+      <div class="space-y-3">
+        <TaskCard
+          v-for="t in store.byStatus('done').value"
+          :key="t.id"
+          :task="t"
+          @open="openTask"
+        />
+      </div>
+    </section>
+  </main>
+
+  <TaskSheet v-model:open="sheetOpen" v-model:task="editing" v-model:tab="activeTab" />
 </template>
