@@ -8,7 +8,6 @@ import { useTasksStore } from '../stores/tasks'
 import { useMetadata } from '../composables/useMetadata'
 import { ChevronDown, Sun, Moon } from 'lucide-vue-next'
 
-/* ---------- Types ---------- */
 type UserLite = {
   id: number
   full_name?: string | null
@@ -16,11 +15,9 @@ type UserLite = {
   avatar_url?: string | null
 }
 
-/* ---------- Store & metadata ---------- */
 const store = useTasksStore()
 const { users } = useMetadata()
 
-/* ---------- Helpers ---------- */
 function toArray<T = unknown>(input: unknown): T[] {
   if (input && typeof input === 'object' && 'value' in (input as any)) {
     const v = (input as any).value
@@ -30,13 +27,9 @@ function toArray<T = unknown>(input: unknown): T[] {
   return []
 }
 
-/** Pool de imágenes locales (coloca archivos en /public/avatars/) */
 const AVATAR_POOL = [
-  '/avatars/1.jpg', '/avatars/2.jpg', '/avatars/3.jpg', '/avatars/4.jpg',
-  '/avatars/5.jpg', '/avatars/6.jpg', '/avatars/7.jpg', '/avatars/8.jpg',
-]
+  '/avatars/1.png', '/avatars/2.png', '/avatars/3.png', '/avatars/4.png',  '/avatars/5.png']
 
-/** Asegura avatar_url siempre: si falta, asigna uno del pool */
 function withAvatar(u: UserLite, i: number): Required<UserLite> {
   const url = u.avatar_url || AVATAR_POOL[i % AVATAR_POOL.length] || null
   return {
@@ -47,7 +40,6 @@ function withAvatar(u: UserLite, i: number): Required<UserLite> {
   }
 }
 
-/* ---------- Carga de tareas ---------- */
 const loading = ref(true)
 const loadError = ref<string | null>(null)
 
@@ -70,26 +62,36 @@ async function ensureTasksLoaded() {
 }
 onMounted(() => { void ensureTasksLoaded() })
 
-/* ---------- Header: team avatars ---------- */
-const teamAvatars = computed(() => {
-  const arr = toArray<UserLite>(users)
-  return arr.slice(0, 8).map((u, i) => withAvatar(u, i))
-})
+const teamAvatars = ref<Required<UserLite>[]>([])
 
-/* ---------- Lists by status ---------- */
+watch(
+  () => toArray<UserLite>(users),
+  (arr) => {
+    if (!arr || arr.length === 0) return
+    teamAvatars.value = arr.slice(0, 8).map((u, i) => withAvatar(u, i))
+  },
+  { immediate: true, deep: false }
+)
+
+teamAvatars.value = AVATAR_POOL.map((src, i) => ({
+  id: i + 1,
+  full_name: null,
+  email: null,
+  avatar_url: src,
+}))
+
+
 const items = computed<Task[]>(() => toArray<Task>((store as any).items))
 const inProgress = computed(() => items.value.filter(t => t.status === 'in_progress'))
 const reviews     = computed(() => items.value.filter(t => t.status === 'reviews'))
 const completed   = computed(() => items.value.filter(t => t.status === 'completed'))
 const done        = computed(() => items.value.filter(t => t.status === 'done'))
 
-/* ---------- Modal wiring ---------- */
 const openEdit = ref(false)
 const selected = ref<Task | null>(null)
 function handleEdit(task: Task | null) { selected.value = task; openEdit.value = true }
 function handleCreate() { handleEdit(null) }
 
-/* ---------- Dark mode toggle ---------- */
 const isDark = ref(false)
 function toggleDark() {
   isDark.value = !isDark.value
@@ -113,12 +115,10 @@ onMounted(() => {
 
 <template>
   <div class="mx-auto max-w-[1200px] px-4 py-6">
-    <!-- Header -->
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-semibold dark:text-white">Tasks List</h1>
 
       <div class="flex items-center gap-3">
-        <!-- Team avatars -->
         <div class="hidden md:flex -space-x-2">
           <template v-for="u in teamAvatars" :key="u.id">
             <img
@@ -129,21 +129,11 @@ onMounted(() => {
           </template>
         </div>
 
-        <!-- Dark mode toggle -->
         <Button variant="outline" size="icon" @click="toggleDark">
           <Sun v-if="!isDark" class="h-5 w-5" />
           <Moon v-else class="h-5 w-5" />
         </Button>
 
-        <!-- Sort y Filter (dejamos estos) -->
-        <Button variant="outline" class="gap-2">
-          Sort by <ChevronDown class="h-4 w-4" />
-        </Button>
-        <Button variant="outline" class="gap-2">
-          Filter <ChevronDown class="h-4 w-4" />
-        </Button>
-
-        <!-- Add New -->
         <Button class="bg-emerald-600 hover:bg-emerald-700 text-white" @click="handleCreate">
           + Add New
         </Button>
