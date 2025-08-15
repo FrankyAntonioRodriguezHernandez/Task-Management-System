@@ -48,7 +48,7 @@
     <!-- Modal Crear -->
     <TaskFormDialog v-model:open="openCreate" />
     <ClientOnly>
-      <SonnerToaster position="top-right" rich-colors />
+      <Toaster position="top-right" rich-colors />
     </ClientOnly>
   </div>
 </template>

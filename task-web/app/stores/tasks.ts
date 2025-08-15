@@ -39,15 +39,23 @@ async function update(id: number, payload: UpdateTaskDto) {
     assignee_ids: payload.assignee_ids?.map(Number) ?? undefined,
   }
   const { data } = await api.put<Task>(`/tasks/${id}`, payload).catch(async () => {
-    // fallback si sólo soporta PATCH
     const r = await api.patch<Task>(`/tasks/${id}`, payload)
     return r
   })
+
+  // Si la respuesta NO incluye relaciones, recarga todo
+  if (!data?.categories || !data?.assignees) {
+    await fetchAll()
+    return data
+  }
+
   const i = items.value.findIndex((t) => t.id === id)
   if (i > -1) items.value[i] = data
+
   await refreshCounts()
   return data
 }
+
 
   async function remove(id: number) {
     await api.delete(`/tasks/${id}`)

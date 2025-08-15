@@ -1,7 +1,5 @@
 import { DateTime } from 'luxon'
 import Task, { type TaskStatus } from '#models/task'
-import TaskCategory from '#models/task_category'
-import User from '#models/user'
 
 type ListOptions = { status?: TaskStatus; trashed?: boolean }
 
@@ -15,8 +13,9 @@ function serializeTask(t: Task) {
     updated_at: t.updated_at?.toISO(),
     categories: t.categories?.map((c) => ({ id: c.id, name: c.name, color: c.color })) ?? [],
     assignees: t.assignees?.map((u) => ({ id: u.id, full_name: u.full_name, avatar_url: u.avatar_url })) ?? [],
-    commentsCount: t.comments?.length ?? 0,
-    attachmentsCount: t.attachments?.length ?? 0,
+    // usa extras de withCount si existen; si no, cae al length de las relaciones
+    comments_count: Number(t.$extras?.comments_count ?? t.comments?.length ?? 0),
+    attachments_count: Number(t.$extras?.attachments_count ?? t.attachments?.length ?? 0),
   }
 }
 
@@ -28,9 +27,10 @@ export default class TaskService {
       .if(Boolean(opts.status), (q) => q.where('status', opts.status!))
       .preload('categories', (q) => q.select(['id', 'name', 'color']))
       .preload('assignees', (q) => q.select(['id', 'full_name', 'avatar_url']))
-      .preload('comments', (q) => q.select(['id']))
-      .preload('attachments', (q) => q.select(['id']))
+      .withCount('comments')
+      .withCount('attachments')
       .orderBy('id', 'asc')
+
     return rows.map(serializeTask)
   }
 
@@ -49,36 +49,57 @@ export default class TaskService {
       .if(!opts.trashed, (qb) => qb.withScopes((s) => s.notTrashed()))
       .if(Boolean(opts.trashed), (qb) => qb.withScopes((s) => s.onlyTrashed()))
       .where('id', id)
-      .preload('categories')
-      .preload('assignees')
-      .preload('comments')
-      .preload('attachments')
+      .preload('categories', (q) => q.select(['id', 'name', 'color']))
+      .preload('assignees', (q) => q.select(['id', 'full_name', 'avatar_url']))
+      .withCount('comments')
+      .withCount('attachments')
       .firstOrFail()
     return serializeTask(t)
   }
 
   async create(
-    data: { title: string; status: TaskStatus; categoryIds?: number[]; assigneeIds?: number[] },
+    data: {
+      title: string
+      status: TaskStatus
+      category_ids?: number[]
+      assignee_ids?: number[]
+      // tolera camelCase por si acaso
+      categoryIds?: number[]
+      assigneeIds?: number[]
+    },
     currentUserId: number
   ) {
     const task = await Task.create({ title: data.title, status: data.status, created_by: currentUserId })
 
-    if (data.categoryIds?.length) {
-      const ids = (await TaskCategory.query().whereIn('id', data.categoryIds)).map((c) => c.id)
-      await task.related('categories').sync(ids)
+    const categoryIds = data.category_ids ?? data.categoryIds ?? []
+    const assigneeIds = data.assignee_ids ?? data.assigneeIds ?? []
+
+    if (categoryIds.length) {
+      await task.related('categories').attach(categoryIds)
+    }
+    if (assigneeIds.length) {
+      await task.related('assignees').attach(assigneeIds)
     }
 
-    if (data.assigneeIds?.length) {
-      const ids = (await User.query().whereIn('id', data.assigneeIds)).map((u) => u.id)
-      await task.related('assignees').sync(ids)
-    }
+    await task.load('categories', (q) => q.select(['id', 'name', 'color']))
+    await task.load('assignees', (q) => q.select(['id', 'full_name', 'avatar_url']))
+    await task.loadCount('comments')
+    await task.loadCount('attachments')
 
-    return this.getOne(task.id)
+    return serializeTask(task)
   }
 
   async update(
     id: number,
-    data: { title?: string; status?: TaskStatus; categoryIds?: number[]; assigneeIds?: number[] }
+    data: {
+      title?: string
+      status?: TaskStatus
+      category_ids?: number[]
+      assignee_ids?: number[]
+      // tolera camelCase por si acaso
+      categoryIds?: number[]
+      assigneeIds?: number[]
+    }
   ) {
     const task = await Task.findOrFail(id)
     if (task.deleted_at) throw new Error('Cannot update a deleted task')
@@ -87,10 +108,21 @@ export default class TaskService {
     if (data.status !== undefined) task.status = data.status
     await task.save()
 
-    if (data.categoryIds) await task.related('categories').sync(data.categoryIds)
-    if (data.assigneeIds) await task.related('assignees').sync(data.assigneeIds)
+    if (data.category_ids !== undefined || data.categoryIds !== undefined) {
+      const ids = data.category_ids ?? data.categoryIds ?? []
+      await task.related('categories').sync(ids)
+    }
+    if (data.assignee_ids !== undefined || data.assigneeIds !== undefined) {
+      const ids = data.assignee_ids ?? data.assigneeIds ?? []
+      await task.related('assignees').sync(ids)
+    }
 
-    return this.getOne(task.id)
+    await task.load('categories', (q) => q.select(['id', 'name', 'color']))
+    await task.load('assignees', (q) => q.select(['id', 'full_name', 'avatar_url']))
+    await task.loadCount('comments')
+    await task.loadCount('attachments')
+
+    return serializeTask(task)
   }
 
   async softDelete(id: number) {
