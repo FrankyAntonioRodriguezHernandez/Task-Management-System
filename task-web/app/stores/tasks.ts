@@ -27,6 +27,7 @@ export const useTasksStore = defineStore('tasks', () => {
     assignee_ids: payload.assignee_ids.map(Number),
   }
   const { data } = await api.post<Task>('/tasks', payload)
+  //forzamos sync
   await fetchAll()
   return data
 }
@@ -42,6 +43,7 @@ async function update(id: number, payload: UpdateTaskDto) {
     return r
   })
 
+  // Si la respuesta NO incluye relaciones, recarga todo
   if (!data?.categories || !data?.assignees) {
     await fetchAll()
     return data
@@ -87,22 +89,7 @@ async function uploadAttachment(taskId: number, file: File) {
   await fetchAll()
 }
 
-async function fetchDeleted() {
-  const { data } = await api.get<Task[]>('/tasks/deleted')
-  deletedItems.value = data
-}
-
-const deletedItems = ref<Task[]>([])
-
-async function getOne(id: number) {
-  const { data } = await api.get<Task & {
-    comments: { id:number; comment:string; created_at:string; user:{ id:number; full_name:string; avatar_url?:string|null } }[],
-    attachments: { id:number; file_name:string; file_path:string; file_size:number; created_at:string }[],
-  }>(`/tasks/${id}`)
-  return data
-}
-
   const byStatus = (s: TaskStatus) => computed(() => items.value.filter((t) => t.status === s))
 
-  return { items, counts, loading, fetchAll, create, update, remove, restore, byStatus,addComment, uploadAttachment, deletedItems, refreshCounts, getOne, fetchDeleted }
+  return { items, counts, loading, fetchAll, create, update, remove, restore, byStatus,addComment, uploadAttachment }
 })
