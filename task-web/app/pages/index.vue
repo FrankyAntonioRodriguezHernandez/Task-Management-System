@@ -134,6 +134,26 @@ onMounted(() => {
           <Moon v-else class="h-5 w-5" />
         </Button>
 
+        <DropdownMenu>
+    <DropdownMenuTrigger as-child>
+      <Button variant="outline" class="gap-2">
+        Views <ChevronDown class="h-4 w-4" />
+      </Button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent align="end">
+      <DropdownMenuItem as-child>
+        <NuxtLink to="/">Tasks List</NuxtLink>
+      </DropdownMenuItem>
+      <DropdownMenuItem as-child>
+        <NuxtLink to="/dashboard">Dashboard</NuxtLink>
+      </DropdownMenuItem>
+      <DropdownMenuItem as-child>
+        <NuxtLink to="/deleted">Deleted</NuxtLink>
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+
         <Button class="bg-emerald-600 hover:bg-emerald-700 text-white" @click="handleCreate">
           + Add New
         </Button>
