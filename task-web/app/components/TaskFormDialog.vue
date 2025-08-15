@@ -3,7 +3,7 @@ import { ref, computed, watch } from 'vue'
 import { z } from 'zod'
 import { useForm } from 'vee-validate'
 import { toTypedSchema } from '@vee-validate/zod'
-import type { TaskStatus, Task, TaskCategory, User } from '../types'
+import type { Task, TaskStatus } from '../types'
 import { useTasksStore } from '../stores/tasks'
 import { useMetadata } from '../composables/useMetadata'
 import { toast } from 'vue-sonner'
@@ -17,6 +17,7 @@ const open = defineModel<boolean>('open', { default: false })
 const editTask = defineModel<Task | null>('task', { default: null })
 
 const isEdit = computed(() => !!editTask.value)
+const submitting = ref(false)
 
 const schema = toTypedSchema(z.object({
   title: z.string().min(1, 'Title required'),
@@ -25,7 +26,7 @@ const schema = toTypedSchema(z.object({
   assignee_ids: z.array(z.number()).default([]),
 }))
 
-const { handleSubmit, values, setValues } = useForm({
+const { handleSubmit, values, setValues, errors } = useForm({
   validationSchema: schema,
   initialValues: { title: '', status: 'in_progress', category_ids: [], assignee_ids: [] as number[] },
 })
@@ -49,6 +50,7 @@ watch(open, (v) => {
 
 const onSubmit = handleSubmit(async (payload) => {
   try {
+    submitting.value = true
     if (isEdit.value && editTask.value) {
       await store.update(editTask.value.id, payload)
       toast.success('Task updated')
@@ -59,6 +61,8 @@ const onSubmit = handleSubmit(async (payload) => {
     open.value = false
   } catch (e: any) {
     toast.error(e?.message || 'Error')
+  } finally {
+    submitting.value = false
   }
 })
 </script>
@@ -74,6 +78,7 @@ const onSubmit = handleSubmit(async (payload) => {
         <div>
           <label class="text-sm mb-1 block">Title</label>
           <Input v-model="(values as any).title" placeholder="Task title" />
+          <p v-if="(errors as any).title" class="text-xs text-red-500 mt-1">{{ (errors as any).title }}</p>
         </div>
 
         <div>
@@ -94,7 +99,7 @@ const onSubmit = handleSubmit(async (payload) => {
         <div>
           <label class="text-sm mb-1 block">Categories</label>
           <div class="grid grid-cols-2 gap-2">
-            <label v-for="c in categories || []" :key="c.id" class="flex items-center gap-2">
+            <label v-for="c in (categories || [])" :key="c.id" class="flex items-center gap-2">
               <input type="checkbox" :value="c.id" v-model="(values as any).category_ids" />
               <span>{{ c.name }}</span>
             </label>
@@ -104,7 +109,7 @@ const onSubmit = handleSubmit(async (payload) => {
         <div>
           <label class="text-sm mb-1 block">Assignees</label>
           <div class="grid grid-cols-2 gap-2">
-            <label v-for="u in users || []" :key="u.id" class="flex items-center gap-2">
+            <label v-for="u in (users || [])" :key="u.id" class="flex items-center gap-2">
               <input type="checkbox" :value="u.id" v-model="(values as any).assignee_ids" />
               <span>{{ u.full_name }}</span>
             </label>
@@ -112,7 +117,9 @@ const onSubmit = handleSubmit(async (payload) => {
         </div>
 
         <DialogFooter>
-          <Button type="submit" class="w-full">{{ isEdit ? 'Save changes' : 'Create' }}</Button>
+          <Button type="submit" class="w-full" :disabled="submitting">
+            {{ submitting ? (isEdit ? 'Saving...' : 'Creating...') : (isEdit ? 'Save changes' : 'Create') }}
+          </Button>
         </DialogFooter>
       </form>
     </DialogContent>

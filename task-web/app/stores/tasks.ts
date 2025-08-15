@@ -21,19 +21,33 @@ export const useTasksStore = defineStore('tasks', () => {
   }
 
   async function create(payload: CreateTaskDto) {
-    const { data } = await api.post<Task>('/tasks', payload)
-    items.value.push(data)
-    await refreshCounts()
-    return data
+  payload = {
+    ...payload,
+    category_ids: payload.category_ids.map(Number),
+    assignee_ids: payload.assignee_ids.map(Number),
   }
+  const { data } = await api.post<Task>('/tasks', payload)
+  //forzamos sync
+  await fetchAll()
+  return data
+}
 
-  async function update(id: number, payload: UpdateTaskDto) {
-    const { data } = await api.patch<Task>(`/tasks/${id}`, payload)
-    const i = items.value.findIndex((t) => t.id === id)
-    if (i > -1) items.value[i] = data
-    await refreshCounts()
-    return data
+async function update(id: number, payload: UpdateTaskDto) {
+  payload = {
+    ...payload,
+    category_ids: payload.category_ids?.map(Number) ?? undefined,
+    assignee_ids: payload.assignee_ids?.map(Number) ?? undefined,
   }
+  const { data } = await api.put<Task>(`/tasks/${id}`, payload).catch(async () => {
+    // fallback si sólo soporta PATCH
+    const r = await api.patch<Task>(`/tasks/${id}`, payload)
+    return r
+  })
+  const i = items.value.findIndex((t) => t.id === id)
+  if (i > -1) items.value[i] = data
+  await refreshCounts()
+  return data
+}
 
   async function remove(id: number) {
     await api.delete(`/tasks/${id}`)

@@ -1,5 +1,8 @@
 import router from '@adonisjs/core/services/router'
 
+router.get('/', async () => {
+  return { message: 'API funcionando' }
+})
 const TasksController = () => import('#controllers/tasks_controller')
 const UsersController = () => import('#controllers/users_controller')
 const CategoriesController = () => import('#controllers/categories_controller')

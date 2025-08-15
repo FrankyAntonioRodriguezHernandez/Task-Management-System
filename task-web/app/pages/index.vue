@@ -5,6 +5,7 @@ import TaskFormDialog from '../components/TaskFormDialog.vue'
 import type { Task } from '../types'
 import { useTasksStore } from '../stores/tasks'
 
+
 const store = useTasksStore()
 await store.fetchAll()
 
