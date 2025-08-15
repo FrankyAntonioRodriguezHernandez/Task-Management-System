@@ -1,26 +1,49 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Task } from '../types'
-import { Card, CardHeader, CardTitle, CardContent, CardFooter } from './ui/card'
-import { Badge } from './ui/badge'
-import { Separator } from './ui/separator'
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Separator } from '../components/ui/separator'
 import { File, MessageCircleMore } from 'lucide-vue-next'
 
 const props = defineProps<{ task: Task }>()
 const emit  = defineEmits<{ (e: 'edit', task: Task): void }>()
 
-const firstAssignees = computed(() => (props.task as any)?.assignees?.slice(0, 3) ?? [])
-const moreAssignees  = computed(() => Math.max(((props.task as any)?.assignees?.length ?? 0) - 3, 0))
+const AVATAR_POOL = [
+  '/avatars/1.PNG', '/avatars/2.PNG', '/avatars/3.PNG', '/avatars/4.PNG', '/avatars/5.PNG',
+]
+
+function resolveAvatar(u: any, idx: number) {
+  if (u?.avatar_url) return u.avatar_url
+  const seed = Number(u?.id)
+  if (Number.isFinite(seed)) return AVATAR_POOL[seed % AVATAR_POOL.length] || AVATAR_POOL[0]
+  return AVATAR_POOL[idx % AVATAR_POOL.length] || AVATAR_POOL[0]
+}
+
+const displayAssignees = computed(() => {
+  const list: any[] = (props.task as any)?.assignees ?? []
+  return list.slice(0, 3).map((u, i) => ({
+    id: Number(u?.id),
+    full_name: u?.full_name ?? u?.email ?? null,
+    avatar_url: resolveAvatar(u, i),
+  }))
+})
+
+const moreAssignees = computed(() => {
+  const total = (props.task as any)?.assignees?.length ?? 0
+  return total > 3 ? total - 3 : 0
+})
 
 const categoryBadgeStyle = (c: any) => {
   const color = c?.color || ''
   return color ? `bg-[${color}] text-white` : 'bg-muted text-foreground'
 }
+
 function openEdit() { emit('edit', props.task) }
 </script>
 
 <template>
   <Card class="relative overflow-hidden rounded-xl border bg-card shadow-sm hover:shadow-md transition-shadow">
-    <!-- Clickable area (header + content) -->
     <div class="cursor-pointer" @click="openEdit">
       <CardHeader class="px-4 pt-4 pr-3">
         <CardTitle class="text-base leading-6">{{ props.task.title }}</CardTitle>
@@ -43,7 +66,6 @@ function openEdit() { emit('edit', props.task) }
 
     <Separator class="mx-4 my-2" />
 
-    <!-- Footer -->
     <CardFooter class="flex items-center justify-between gap-4 pt-2 px-4 pb-4">
       <div class="text-xs text-muted-foreground font-medium">#{{ props.task.id }}</div>
 
@@ -59,19 +81,12 @@ function openEdit() { emit('edit', props.task) }
       </div>
 
       <div class="flex -space-x-2">
-        <template v-for="a in firstAssignees" :key="a.id">
+        <template v-for="a in displayAssignees" :key="a.id">
           <img
-            v-if="a.avatar_url"
             :src="a.avatar_url"
-            :alt="a.full_name"
+            :alt="a.full_name || ('User #' + a.id)"
             class="h-6 w-6 rounded-full ring-2 ring-background object-cover"
           />
-          <div
-            v-else
-            class="h-6 w-6 rounded-full ring-2 ring-background bg-muted flex items-center justify-center text-[10px] uppercase"
-          >
-            {{ (a.full_name || a.email || 'U' + a.id).slice(0,2) }}
-          </div>
         </template>
         <div
           v-if="moreAssignees"
