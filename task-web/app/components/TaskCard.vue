@@ -54,9 +54,9 @@ function openEdit() { emit('edit', props.task) }
           <Badge
             v-for="c in (props.task as any).categories"
             :key="c.id"
-            variant="outline"
-            :class="categoryBadgeStyle(c)"
-            class="px-2 py-0.5 text-xs"
+            variant="secondary"
+                class="border"
+                :style="{ backgroundColor: (c.color || '#999') + '22', borderColor: c.color || '#999' }"
           >
             {{ c.name }}
           </Badge>
