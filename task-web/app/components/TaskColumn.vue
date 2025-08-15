@@ -4,7 +4,7 @@ import type { Task } from '../types'
 
 const props = defineProps<{
   title: string
-  color: string 
+  color: string
   tasks: Task[] | { value: Task[] }
 }>()
 

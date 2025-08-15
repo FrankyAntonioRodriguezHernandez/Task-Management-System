@@ -10,7 +10,7 @@ export interface User {
 export interface TaskCategory {
   id: number
   name: string
-  color: string 
+  color: string
 }
 
 export interface Task {

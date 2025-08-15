@@ -13,19 +13,21 @@ if (!store.items.length) await store.fetchAll()
 const metrics = computed(() => ({
   totalActive: store.items.length,
   inReviews: store.counts.reviews,
-  completedThisMonth: store.counts.completed, 
-  avgCompletionDays: 3, 
+  completedThisMonth: store.counts.completed,
+  avgCompletionDays: 3,
 }))
 
 const chartData = computed(() => ({
   labels: ['In Progress', 'Reviews', 'Completed', 'Done'],
   datasets: [
-    { label: 'Tasks by status', data: [
-      store.counts.in_progress,
-      store.counts.reviews,
-      store.counts.completed,
-      store.counts.done,
-    ]},
+    {
+      label: 'Tasks by status', data: [
+        store.counts.in_progress,
+        store.counts.reviews,
+        store.counts.completed,
+        store.counts.done,
+      ]
+    },
   ],
 }))
 const chartOptions = { responsive: true, maintainAspectRatio: false }

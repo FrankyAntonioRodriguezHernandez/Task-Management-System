@@ -2,7 +2,6 @@
   <NuxtLayout>
     <NuxtPage />
   </NuxtLayout>
-  <!-- Toaster for feedback -->
   <Toaster />
 </template>
 

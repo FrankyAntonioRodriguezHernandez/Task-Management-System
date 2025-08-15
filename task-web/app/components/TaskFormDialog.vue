@@ -20,7 +20,6 @@ const open = defineModel<boolean>('open', { default: false })
 const editTask = defineModel<Task | null>('task', { default: null })
 const isEdit = computed(() => !!editTask.value)
 
-/* zod schema */
 const schema = toTypedSchema(
   z.object({
     title: z.string().min(1, 'Title required'),
@@ -40,11 +39,9 @@ const [status] = defineField<'status'>('status')
 const [category_ids] = defineField<'category_ids'>('category_ids')
 const [assignee_ids] = defineField<'assignee_ids'>('assignee_ids')
 
-/* metadata */
 const { users, categories } = useMetadata()
 const store = useTasksStore()
 
-/* Right column state */
 const commentText = ref('')
 const file = ref<File | null>(null)
 function onFileChange(e: Event) {
@@ -52,13 +49,12 @@ function onFileChange(e: Event) {
   file.value = input.files?.[0] ?? null
 }
 
-/* display lists */
 type UiUser = { id: number; full_name: string | null; email: string | null; avatar_url: string | null }
 type UiCategory = { id: number; name: string }
 
 const displayUsers = computed<UiUser[]>(() => {
   const raw = Array.isArray((users as any)?.value) ? (users as any).value
-           : Array.isArray(users as any) ? (users as any) : []
+    : Array.isArray(users as any) ? (users as any) : []
   let list = (raw as any[]).map(u => ({
     id: Number(u.id),
     full_name: u.full_name ?? u.fullName ?? null,
@@ -66,7 +62,6 @@ const displayUsers = computed<UiUser[]>(() => {
     avatar_url: u.avatar_url ?? null,
   }))
   if (list.length) return list
-  // fallback from tasks
   const map = new Map<number, UiUser>()
   for (const t of (store.items as any[])) {
     for (const a of (t?.assignees ?? [])) {
@@ -84,7 +79,7 @@ const displayUsers = computed<UiUser[]>(() => {
 
 const displayCategories = computed<UiCategory[]>(() => {
   const raw = Array.isArray((categories as any)?.value) ? (categories as any).value
-           : Array.isArray(categories as any) ? (categories as any) : []
+    : Array.isArray(categories as any) ? (categories as any) : []
   let list = (raw as any[]).map(c => ({ id: Number(c.id), name: String(c.name) }))
   if (list.length) return list
   const map = new Map<number, UiCategory>()
@@ -97,14 +92,13 @@ const displayCategories = computed<UiCategory[]>(() => {
   return list
 })
 
-/* sync on open/close */
 watch(open, (v) => {
   if (v && editTask.value) {
     setValues({
       title: editTask.value.title,
       status: editTask.value.status as TaskStatus,
-      category_ids: (editTask.value as any).categories?.map((c:any)=>c.id) ?? [],
-      assignee_ids: (editTask.value as any).assignees?.map((a:any)=>a.id) ?? [],
+      category_ids: (editTask.value as any).categories?.map((c: any) => c.id) ?? [],
+      assignee_ids: (editTask.value as any).assignees?.map((a: any) => a.id) ?? [],
     })
   }
   if (!v) {
@@ -114,7 +108,6 @@ watch(open, (v) => {
   }
 })
 
-/* submit left column */
 const onSubmit = handleSubmit(async (p) => {
   const payload = {
     title: p.title,
@@ -136,7 +129,6 @@ const onSubmit = handleSubmit(async (p) => {
   }
 })
 
-/* right column actions */
 async function submitComment() {
   if (!isEdit.value || !editTask.value) return toast.error('Open an existing task to add a comment')
   const body = commentText.value.trim()
@@ -178,9 +170,7 @@ async function softDelete() {
         </DialogDescription>
       </DialogHeader>
 
-      <!-- Two compact columns (faithful & centered) -->
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- LEFT: original form -->
         <form class="space-y-4" @submit.prevent="onSubmit">
           <div>
             <label class="text-sm mb-1 block">Title</label>
@@ -190,7 +180,9 @@ async function softDelete() {
           <div>
             <label class="text-sm mb-1 block">Status</label>
             <Select v-model="status">
-              <SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger>
+              <SelectTrigger>
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
                   <SelectItem value="in_progress">In Progress</SelectItem>
@@ -232,27 +224,17 @@ async function softDelete() {
           </DialogFooter>
         </form>
 
-        <!-- RIGHT: comment / attachment / delete (stacked) -->
         <div class="space-y-6 text-center">
           <div class="space-y-2">
             <div class="text-sm font-medium">Add Comment</div>
-            <textarea
-              v-model="commentText"
-              rows="4"
-              class="w-full rounded-md border p-2 text-sm"
-              placeholder="Write your comment..."
-            ></textarea>
+            <textarea v-model="commentText" rows="4" class="w-full rounded-md border p-2 text-sm"
+              placeholder="Write your comment..."></textarea>
             <Button variant="outline" class="w-full" @click="submitComment">Send Comment</Button>
           </div>
 
           <div class="space-y-2">
             <div class="text-sm font-medium">Add Attachment</div>
-            <input
-              type="file"
-              accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-              @change="onFileChange"
-              class="text-sm w-full"
-            />
+            <input type="file" accept=".pdf,.doc,.docx,.png,.jpg,.jpeg" @change="onFileChange" class="text-sm w-full" />
             <Button :disabled="!file" variant="outline" class="w-full" @click="submitAttachment">Upload</Button>
           </div>
 

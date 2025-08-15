@@ -28,7 +28,7 @@ function toArray<T = unknown>(input: unknown): T[] {
 }
 
 const AVATAR_POOL = [
-  '/avatars/1.png', '/avatars/2.png', '/avatars/3.png', '/avatars/4.png',  '/avatars/5.png']
+  '/avatars/1.png', '/avatars/2.png', '/avatars/3.png', '/avatars/4.png', '/avatars/5.png']
 
 function withAvatar(u: UserLite, i: number): Required<UserLite> {
   const url = u.avatar_url || AVATAR_POOL[i % AVATAR_POOL.length] || null
@@ -83,9 +83,9 @@ teamAvatars.value = AVATAR_POOL.map((src, i) => ({
 
 const items = computed<Task[]>(() => toArray<Task>((store as any).items))
 const inProgress = computed(() => items.value.filter(t => t.status === 'in_progress'))
-const reviews     = computed(() => items.value.filter(t => t.status === 'reviews'))
-const completed   = computed(() => items.value.filter(t => t.status === 'completed'))
-const done        = computed(() => items.value.filter(t => t.status === 'done'))
+const reviews = computed(() => items.value.filter(t => t.status === 'reviews'))
+const completed = computed(() => items.value.filter(t => t.status === 'completed'))
+const done = computed(() => items.value.filter(t => t.status === 'done'))
 
 const openEdit = ref(false)
 const selected = ref<Task | null>(null)
@@ -121,11 +121,8 @@ onMounted(() => {
       <div class="flex items-center gap-3">
         <div class="hidden md:flex -space-x-2">
           <template v-for="u in teamAvatars" :key="u.id">
-            <img
-              :src="u.avatar_url!"
-              :alt="u.full_name || u.email || ('User #' + u.id)"
-              class="h-8 w-8 rounded-full ring-2 ring-background object-cover"
-            />
+            <img :src="u.avatar_url!" :alt="u.full_name || u.email || ('User #' + u.id)"
+              class="h-8 w-8 rounded-full ring-2 ring-background object-cover" />
           </template>
         </div>
 
@@ -135,24 +132,25 @@ onMounted(() => {
         </Button>
 
         <DropdownMenu>
-    <DropdownMenuTrigger as-child>
-      <Button variant="outline" class="gap-2">
-        Views <ChevronDown class="h-4 w-4" />
-      </Button>
-    </DropdownMenuTrigger>
+          <DropdownMenuTrigger as-child>
+            <Button variant="outline" class="gap-2">
+              Views
+              <ChevronDown class="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
 
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem as-child>
-        <NuxtLink to="/">Tasks List</NuxtLink>
-      </DropdownMenuItem>
-      <DropdownMenuItem as-child>
-        <NuxtLink to="/dashboard">Dashboard</NuxtLink>
-      </DropdownMenuItem>
-      <DropdownMenuItem as-child>
-        <NuxtLink to="/deleted">Deleted</NuxtLink>
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem as-child>
+              <NuxtLink to="/">Tasks List</NuxtLink>
+            </DropdownMenuItem>
+            <DropdownMenuItem as-child>
+              <NuxtLink to="/dashboard">Dashboard</NuxtLink>
+            </DropdownMenuItem>
+            <DropdownMenuItem as-child>
+              <NuxtLink to="/deleted">Deleted</NuxtLink>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Button class="bg-emerald-600 hover:bg-emerald-700 text-white" @click="handleCreate">
           + Add New
@@ -160,15 +158,13 @@ onMounted(() => {
       </div>
     </div>
 
-    <!-- Board -->
     <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <TaskColumn title="In Progress" color="bg-purple-500" :tasks="inProgress" @edit="handleEdit"/>
-      <TaskColumn title="Reviews" color="bg-orange-500" :tasks="reviews" @edit="handleEdit"/>
-      <TaskColumn title="Completed" color="bg-green-500" :tasks="completed" @edit="handleEdit"/>
-      <TaskColumn title="Done" color="bg-blue-500" :tasks="done" @edit="handleEdit"/>
+      <TaskColumn title="In Progress" color="bg-purple-500" :tasks="inProgress" @edit="handleEdit" />
+      <TaskColumn title="Reviews" color="bg-orange-500" :tasks="reviews" @edit="handleEdit" />
+      <TaskColumn title="Completed" color="bg-green-500" :tasks="completed" @edit="handleEdit" />
+      <TaskColumn title="Done" color="bg-blue-500" :tasks="done" @edit="handleEdit" />
     </div>
 
-    <!-- Create/Edit dialog -->
     <TaskFormDialog v-model:open="openEdit" v-model:task="selected" />
   </div>
 </template>

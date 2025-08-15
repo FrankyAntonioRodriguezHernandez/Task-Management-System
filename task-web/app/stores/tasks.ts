@@ -13,7 +13,7 @@ export const useTasksStore = defineStore('tasks', () => {
   const api = useApi()
 
   const items = ref<Task[]>([])
-  const deleted = ref<Task[]>([]) 
+  const deleted = ref<Task[]>([])
   const counts = ref<TaskCounts>({
     in_progress: 0,
     reviews: 0,
@@ -93,16 +93,16 @@ export const useTasksStore = defineStore('tasks', () => {
   async function remove(id: number) {
     await api.delete(`/tasks/${id}`)
     items.value = items.value.filter((t) => t.id !== id)
-    try { await fetchDeleted() } catch {}
+    try { await fetchDeleted() } catch { }
     await refreshCounts()
   }
-  
+
   async function restore(id: number) {
-  const { data } = await api.post<Task>(`/tasks/${id}/restore`)
-  items.value.push(data)         
-  await refreshCounts()          
-  return data
-}
+    const { data } = await api.post<Task>(`/tasks/${id}/restore`)
+    items.value.push(data)
+    await refreshCounts()
+    return data
+  }
 
   async function refreshCounts() {
     const { data } = await api.get<TaskCounts>('/tasks/counts')
@@ -123,14 +123,14 @@ export const useTasksStore = defineStore('tasks', () => {
     await fetchAll()
   }
   async function fetchComments(taskId: number) {
-  const { data } = await api.get(`/tasks/${taskId}/comments`)
-  return data
-}
+    const { data } = await api.get(`/tasks/${taskId}/comments`)
+    return data
+  }
 
-async function fetchAttachments(taskId: number) {
-  const { data } = await api.get(`/tasks/${taskId}/attachments`)
-  return data
-}
+  async function fetchAttachments(taskId: number) {
+    const { data } = await api.get(`/tasks/${taskId}/attachments`)
+    return data
+  }
 
 
   const byStatus = (s: TaskStatus) =>
@@ -152,6 +152,6 @@ async function fetchAttachments(taskId: number) {
     uploadAttachment,
     byStatus,
     fetchComments,
-    fetchAttachments, 
+    fetchAttachments,
   }
 })

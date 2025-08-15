@@ -4,7 +4,6 @@ import type { Task } from '../types'
 import { useApi } from '../services/api'
 import { useTasksStore } from '../stores/tasks'
 
-// shadcn-vue
 import { Button } from '../components/ui/button'
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
@@ -13,31 +12,22 @@ import {
   AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction
 } from '../components/ui/alert-dialog'
 
-// Icons
 import { ArrowLeft, Undo2, MessageSquare, Paperclip, Loader2 } from 'lucide-vue-next'
 
-// Si tu tipo Task no incluye deleted_at en el front:
 type DeletedTask = Task & { deleted_at?: string | null }
 
-// API/Store
 const api = useApi()
 const store = useTasksStore()
-
-// Estado de la vista
 const rows = ref<DeletedTask[]>([])
 const loading = ref(false)
-
-// Confirmación
 const confirmOpen = ref(false)
 const restoreId = ref<number | null>(null)
 const restoring = ref(false)
 
-// Helpers camel/snake
 function getCount(obj: any, snakeKey: string, camelKey: string) {
   return (obj?.[snakeKey] ?? obj?.[camelKey] ?? 0) as number
 }
 
-// Carga inicial
 async function fetchDeleted() {
   loading.value = true
   try {
@@ -57,9 +47,7 @@ async function doRestore() {
   if (restoreId.value == null) return
   restoring.value = true
   try {
-    // Restaura en backend + refresca contadores en el store
     await store.restore(restoreId.value)
-    // Saca la tarea restaurada del listado local
     rows.value = rows.value.filter(t => t.id !== restoreId.value)
     confirmOpen.value = false
     restoreId.value = null
@@ -76,7 +64,6 @@ onMounted(fetchDeleted)
 
 <template>
   <main class="container mx-auto px-4 py-6">
-    <!-- Header sticky -->
     <div class="sticky top-0 z-10 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 border-b">
       <div class="flex items-center justify-between h-14">
         <div class="flex items-center gap-3">
@@ -94,7 +81,6 @@ onMounted(fetchDeleted)
       </div>
     </div>
 
-    <!-- Listado -->
     <div class="mt-6">
       <div v-if="loading" class="flex items-center justify-center py-16 text-muted-foreground">
         <Loader2 class="h-5 w-5 mr-2 animate-spin" /> Loading…
@@ -105,11 +91,7 @@ onMounted(fetchDeleted)
       </div>
 
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <Card
-          v-for="t in rows"
-          :key="t.id"
-          class="hover:shadow-sm transition-shadow"
-        >
+        <Card v-for="t in rows" :key="t.id" class="hover:shadow-sm transition-shadow">
           <CardHeader class="pb-2">
             <CardTitle class="text-base leading-tight pr-8">
               {{ t.title }}
@@ -117,20 +99,13 @@ onMounted(fetchDeleted)
           </CardHeader>
 
           <CardContent class="space-y-3">
-            <!-- Categorías -->
             <div class="flex flex-wrap gap-2">
-              <Badge
-                v-for="c in t.categories"
-                :key="c.id"
-                variant="secondary"
-                class="border"
-                :style="{ backgroundColor: (c.color || '#999') + '22', borderColor: c.color || '#999' }"
-              >
+              <Badge v-for="c in t.categories" :key="c.id" variant="secondary" class="border"
+                :style="{ backgroundColor: (c.color || '#999') + '22', borderColor: c.color || '#999' }">
                 {{ c.name }}
               </Badge>
             </div>
 
-            <!-- Footer mini: counts + asignados -->
             <div class="flex items-center justify-between text-muted-foreground">
               <div class="flex items-center gap-4">
                 <span class="inline-flex items-center gap-1 text-xs">
@@ -141,13 +116,9 @@ onMounted(fetchDeleted)
                 </span>
               </div>
               <div class="flex -space-x-2">
-                <img
-                  v-for="u in (t.assignees || []).slice(0, 3)"
-                  :key="u.id"
+                <img v-for="u in (t.assignees || []).slice(0, 3)" :key="u.id"
                   :src="u.avatar_url || ('https://api.dicebear.com/9.x/initials/svg?seed=' + encodeURIComponent(u.full_name || 'U'))"
-                  :alt="u.full_name || 'User'"
-                  class="h-6 w-6 rounded-full ring-2 ring-white object-cover"
-                />
+                  :alt="u.full_name || 'User'" class="h-6 w-6 rounded-full ring-2 ring-white object-cover" />
               </div>
             </div>
           </CardContent>
@@ -164,7 +135,6 @@ onMounted(fetchDeleted)
       </div>
     </div>
 
-    <!-- Confirmación de restauración -->
     <AlertDialog v-model:open="confirmOpen">
       <AlertDialogContent>
         <AlertDialogHeader>

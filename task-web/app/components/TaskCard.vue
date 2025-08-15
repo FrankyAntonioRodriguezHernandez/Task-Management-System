@@ -9,7 +9,7 @@ import { File, MessageCircleMore, Loader2 } from 'lucide-vue-next'
 import { Popover, PopoverTrigger, PopoverContent } from '../components/ui/popover'
 
 const props = defineProps<{ task: Task }>()
-const emit  = defineEmits<{ (e: 'edit', task: Task): void }>()
+const emit = defineEmits<{ (e: 'edit', task: Task): void }>()
 
 const api = useApi()
 
@@ -40,7 +40,6 @@ const moreAssignees = computed(() => {
 
 function openEdit() { emit('edit', props.task) }
 
-// --- Attachments ---
 const attachments = ref<any[]>([])
 const loadingAttachments = ref(false)
 async function loadAttachments() {
@@ -53,7 +52,6 @@ async function loadAttachments() {
   }
 }
 
-// --- Comments ---
 const comments = ref<any[]>([])
 const loadingComments = ref(false)
 async function loadComments() {
@@ -76,13 +74,8 @@ async function loadComments() {
 
       <CardContent class="px-4 pb-2">
         <div v-if="(props.task as any)?.categories?.length" class="flex flex-wrap gap-2">
-          <Badge
-            v-for="c in (props.task as any).categories"
-            :key="c.id"
-            variant="secondary"
-            class="border"
-            :style="{ backgroundColor: (c.color || '#999') + '22', borderColor: c.color || '#999' }"
-          >
+          <Badge v-for="c in (props.task as any).categories" :key="c.id" variant="secondary" class="border"
+            :style="{ backgroundColor: (c.color || '#999') + '22', borderColor: c.color || '#999' }">
             {{ c.name }}
           </Badge>
         </div>
@@ -95,7 +88,6 @@ async function loadComments() {
       <div class="text-xs text-muted-foreground font-medium">#{{ props.task.id }}</div>
 
       <div class="flex items-center gap-4 text-xs text-muted-foreground">
-        <!-- Attachments -->
         <Popover @open="loadAttachments">
           <PopoverTrigger as-child>
             <button class="flex items-center gap-1 hover:text-foreground">
@@ -116,13 +108,12 @@ async function loadComments() {
                 <a :href="a.url" target="_blank" class="text-sm text-blue-600 hover:underline">
                   {{ a.filename }}
                 </a>
-                <span class="text-xs text-muted-foreground">{{ (a.size/1024).toFixed(1) }} KB</span>
+                <span class="text-xs text-muted-foreground">{{ (a.size / 1024).toFixed(1) }} KB</span>
               </div>
             </div>
           </PopoverContent>
         </Popover>
 
-        <!-- Comments -->
         <Popover @open="loadComments">
           <PopoverTrigger as-child>
             <button class="flex items-center gap-1 hover:text-foreground">
@@ -150,16 +141,11 @@ async function loadComments() {
 
       <div class="flex -space-x-2">
         <template v-for="a in displayAssignees" :key="a.id">
-          <img
-            :src="a.avatar_url"
-            :alt="a.full_name || ('User #' + a.id)"
-            class="h-6 w-6 rounded-full ring-2 ring-background object-cover"
-          />
+          <img :src="a.avatar_url" :alt="a.full_name || ('User #' + a.id)"
+            class="h-6 w-6 rounded-full ring-2 ring-background object-cover" />
         </template>
-        <div
-          v-if="moreAssignees"
-          class="h-6 w-6 rounded-full bg-muted text-[10px] ring-2 ring-background flex items-center justify-center"
-        >
+        <div v-if="moreAssignees"
+          class="h-6 w-6 rounded-full bg-muted text-[10px] ring-2 ring-background flex items-center justify-center">
           +{{ moreAssignees }}
         </div>
       </div>
