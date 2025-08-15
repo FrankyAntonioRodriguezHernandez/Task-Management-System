@@ -31,6 +31,7 @@ const { handleSubmit, defineField, setValues, resetForm } = useForm({
   initialValues: { title: '', status: 'in_progress', category_ids: [], assignee_ids: [] }
 })
 
+
 const [title] = defineField<'title'>('title')
 const [status] = defineField<'status'>('status')
 const [category_ids] = defineField<'category_ids'>('category_ids')
@@ -54,7 +55,14 @@ watch(open, (v) => {
 
 const store = useTasksStore()
 
-const onSubmit = handleSubmit(async (payload) => {
+const onSubmit = handleSubmit(async (p) => {
+  const payload = {
+    title: p.title,
+    status: p.status,
+    category_ids: (p.category_ids || []).map(Number),
+    assignee_ids: (p.assignee_ids || []).map(Number),
+  }
+
   try {
     if (isEdit.value && editTask.value) {
       await store.update(editTask.value.id, payload)
@@ -68,6 +76,7 @@ const onSubmit = handleSubmit(async (payload) => {
     toast.error(e?.message || 'Error')
   }
 })
+
 </script>
 
 <template>
